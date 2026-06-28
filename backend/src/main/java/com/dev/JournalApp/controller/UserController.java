@@ -3,6 +3,9 @@ package com.dev.JournalApp.controller;
 import com.dev.JournalApp.dto.UserRequest;
 import com.dev.JournalApp.dto.UserResponse;
 import com.dev.JournalApp.service.UserService;
+
+import jakarta.validation.Valid;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -26,7 +29,7 @@ public class UserController {
     @PatchMapping
     public ResponseEntity<UserResponse> updateUserPassword(
             @PathVariable String username,
-            @RequestBody UserRequest req) {
+            @Valid @RequestBody UserRequest req) {
         UserResponse res = userService.updateUserPassword(username, req);
         return ResponseEntity.ok(res);
     }

@@ -3,6 +3,9 @@ package com.dev.JournalApp.controller;
 import com.dev.JournalApp.dto.UserRequest;
 import com.dev.JournalApp.dto.UserResponse;
 import com.dev.JournalApp.service.AuthService;
+
+import jakarta.validation.Valid;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,7 +25,7 @@ public class AuthController {
 
     @PostMapping
     public ResponseEntity<UserResponse> createNewUser(
-            @RequestBody UserRequest req) {
+            @Valid @RequestBody UserRequest req) {
         UserResponse res = authService.createNewUser(req);
         return new ResponseEntity<>(res, HttpStatus.CREATED);
     }

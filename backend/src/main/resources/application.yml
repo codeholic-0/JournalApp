@@ -1,4 +1,6 @@
 spring:
+  profiles:
+    active: local
   application:
     name: ${APP_NAME}
   mongodb:
@@ -8,5 +10,5 @@ spring:
       auto-index-creation: ${TRUE_OR_FALSE}
 
 security:
-    bcrypt:
-        strength: ${BCRYPT_STRENGTH}
+  bcrypt:
+    strength: ${BCRYPT_STRENGTH}

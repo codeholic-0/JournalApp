@@ -1,5 +1,7 @@
 package com.dev.JournalApp.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,6 +13,8 @@ import lombok.Setter;
 @AllArgsConstructor
 public class JournalRequest {
 
+    @NotBlank
     private String title;
+    @Size(max = 5000)
     private String content;
 }

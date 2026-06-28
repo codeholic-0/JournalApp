@@ -3,6 +3,9 @@ package com.dev.JournalApp.controller;
 import com.dev.JournalApp.dto.JournalRequest;
 import com.dev.JournalApp.dto.JournalResponse;
 import com.dev.JournalApp.service.JournalService;
+
+import jakarta.validation.Valid;
+
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,7 +26,7 @@ public class JournalController {
     @PostMapping
     public ResponseEntity<JournalResponse> createJournal(
             @PathVariable String username,
-            @RequestBody JournalRequest req) {
+            @Valid @RequestBody JournalRequest req) {
         JournalResponse res = journalService.createJournal(username, req);
         return new ResponseEntity<>(res, HttpStatus.CREATED);
     }
@@ -49,7 +52,7 @@ public class JournalController {
     public ResponseEntity<JournalResponse> updateJournal(
             @PathVariable String username,
             @PathVariable String journalId,
-            @RequestBody JournalRequest updates) {
+            @Valid @RequestBody JournalRequest updates) {
         JournalResponse res = journalService.updateJournal(
                 username,
                 journalId,

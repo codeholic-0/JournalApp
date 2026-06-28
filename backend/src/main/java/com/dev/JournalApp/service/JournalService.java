@@ -91,8 +91,10 @@ public class JournalService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Journal not found with id: " + journalId));
         if (entry.getUsername().equals(username)) {
-            entry.setTitle(updates.getTitle());
-            entry.setContent(updates.getContent());
+            if (entry.getTitle() != null)
+                entry.setTitle(updates.getTitle());
+            if (entry.getContent() != null)
+                entry.setContent(updates.getContent());
             journalRepository.save(entry);
             return toJournalResponse(entry);
         } else {
