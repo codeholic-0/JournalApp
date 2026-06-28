@@ -6,11 +6,15 @@ import com.dev.JournalApp.enumeration.UserType;
 import com.dev.JournalApp.exceptions.UserAlreadyExistsException;
 import com.dev.JournalApp.models.User;
 import com.dev.JournalApp.repository.UserRepository;
+
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.List;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
+@Slf4j
 public class AuthService {
 
     private final UserRepository userRepository;
@@ -33,6 +37,7 @@ public class AuthService {
 
     public UserResponse createNewUser(UserRequest req) {
         if (userRepository.existsByUsername(req.getUsername())) {
+            log.warn("Duplicate Registration Attempt: {}", req.getUsername());
             throw new UserAlreadyExistsException(req.getUsername());
         } else {
             User user = new User();
@@ -40,6 +45,7 @@ public class AuthService {
             user.setPassword(passwordEncoder.encode(req.getPassword()));
             user.setRoles(List.of(UserType.USER));
             userRepository.save(user);
+            log.info("User Registered: {}", req.getUsername());
             return toUserResponse(user);
         }
     }

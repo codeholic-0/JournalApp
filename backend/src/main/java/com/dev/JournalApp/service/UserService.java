@@ -6,10 +6,14 @@ import com.dev.JournalApp.exceptions.ResourceNotFoundException;
 import com.dev.JournalApp.models.User;
 import com.dev.JournalApp.repository.JournalRepository;
 import com.dev.JournalApp.repository.UserRepository;
+
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
+@Slf4j
 public class UserService {
 
     private final UserRepository userRepository;
@@ -38,6 +42,7 @@ public class UserService {
                 .findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "User with username: " + username + " not found"));
+        log.debug("User Fetched: {}", username);
         return toUserResponse(user);
     }
 
@@ -47,7 +52,9 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "User with username: " + username + " not found"));
         old.setPassword(passwordEncoder.encode(req.getPassword()));
-        return toUserResponse(userRepository.save(old));
+        old = userRepository.save(old);
+        log.info("Password updated for user: {}", username);
+        return toUserResponse(old);
     }
 
     public void deleteUser(String username) {
@@ -57,5 +64,6 @@ public class UserService {
                         "User with username: " + username + " not found"));
         journalRepository.deleteAllById(user.getJournals());
         userRepository.delete(user);
+        log.info("User {} deleted.", username);
     }
 }

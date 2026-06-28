@@ -8,11 +8,15 @@ import com.dev.JournalApp.models.JournalEntry;
 import com.dev.JournalApp.models.User;
 import com.dev.JournalApp.repository.JournalRepository;
 import com.dev.JournalApp.repository.UserRepository;
+
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Slf4j
 public class JournalService {
 
     private final JournalRepository journalRepository;
@@ -54,6 +58,7 @@ public class JournalService {
         var res = journalRepository.save(entry);
         user.getJournals().add(entry.getId());
         userRepository.save(user);
+        log.info("Journal created: {} for user: {}", req.getTitle(), username);
         return toJournalResponse(res);
     }
 
@@ -65,6 +70,7 @@ public class JournalService {
         if (entry.getUsername().equals(username)) {
             return toJournalResponse(entry);
         } else {
+            log.warn("Ownership mismatch! user: {} tried to access journal: {}", username, entry.getTitle());
             throw new JournalOwnershipMismatchException(username);
         }
     }
@@ -96,8 +102,10 @@ public class JournalService {
             if (entry.getContent() != null)
                 entry.setContent(updates.getContent());
             journalRepository.save(entry);
+            log.info("Journal: {} updated", entry.getId());
             return toJournalResponse(entry);
         } else {
+            log.warn("Ownership mismatch! user: {} tried to access journal: {}", username, entry.getId());
             throw new JournalOwnershipMismatchException(username);
         }
     }
@@ -116,7 +124,9 @@ public class JournalService {
             journalRepository.delete(entry);
             user.getJournals().remove(journalId);
             userRepository.save(user);
+            log.info("Journal {} deleted for user: {}", entry.getId(), username);
         } else {
+            log.warn("Ownership mismatch! user: {} tried to access journal: {}", username, entry.getId());
             throw new JournalOwnershipMismatchException(username);
         }
     }
