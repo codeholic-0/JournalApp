@@ -1,7 +1,7 @@
 package com.dev.JournalApp.service;
 
-import com.dev.JournalApp.dto.UserRequest;
-import com.dev.JournalApp.dto.UserResponse;
+import com.dev.JournalApp.dto.request.UserRequest;
+import com.dev.JournalApp.dto.response.UserResponse;
 import com.dev.JournalApp.exceptions.ResourceNotFoundException;
 import com.dev.JournalApp.models.User;
 import com.dev.JournalApp.repository.JournalRepository;

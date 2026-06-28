@@ -12,3 +12,8 @@ spring:
 security:
   bcrypt:
     strength: ${BCRYPT_STRENGTH}
+
+jwt:
+  secret: ${jwt.secret}
+  access-expiry: ${jwt.access-expiry}
+  refresh-expiry: ${jwt.refresh-expiry}

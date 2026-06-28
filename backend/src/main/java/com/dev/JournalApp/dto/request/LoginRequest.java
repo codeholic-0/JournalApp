@@ -1,7 +1,6 @@
-package com.dev.JournalApp.dto;
+package com.dev.JournalApp.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,10 +10,9 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class JournalRequest {
-
+public class LoginRequest {
     @NotBlank
-    private String title;
-    @Size(max = 5000)
-    private String content;
+    private String username;
+    @NotBlank
+    private String password;
 }

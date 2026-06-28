@@ -1,10 +1,16 @@
 package com.dev.JournalApp.controller;
 
-import com.dev.JournalApp.dto.UserRequest;
-import com.dev.JournalApp.dto.UserResponse;
+import com.dev.JournalApp.config.JwtUtil;
+import com.dev.JournalApp.dto.request.LoginRequest;
+import com.dev.JournalApp.dto.request.UserRequest;
+import com.dev.JournalApp.dto.response.AuthResponse;
+import com.dev.JournalApp.repository.UserRepository;
 import com.dev.JournalApp.service.AuthService;
 
+import com.dev.JournalApp.service.RefreshTokenService;
 import jakarta.validation.Valid;
+
+import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,16 +23,44 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/auth")
 public class AuthController {
 
+    private final RefreshTokenService refreshTokenService;
     private final AuthService authService;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService,
+            RefreshTokenService refreshTokenService,
+            JwtUtil jwtUtil,
+            UserRepository userRepository) {
         this.authService = authService;
+        this.refreshTokenService = refreshTokenService;
     }
 
-    @PostMapping
-    public ResponseEntity<UserResponse> createNewUser(
+    @PostMapping("/register")
+    public ResponseEntity<AuthResponse> createNewUser(
             @Valid @RequestBody UserRequest req) {
-        UserResponse res = authService.createNewUser(req);
+        AuthResponse res = authService.createNewUser(req);
         return new ResponseEntity<>(res, HttpStatus.CREATED);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<AuthResponse> login(
+            @Valid @RequestBody LoginRequest req) {
+        AuthResponse res = authService.login(req);
+        return ResponseEntity.ok(res);
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponse> refresh(
+            @RequestBody Map<String, String> body) {
+        AuthResponse res = authService.refresh(body);
+        return ResponseEntity.ok(res);
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@RequestBody Map<String, String> body) {
+        String rawToken = body.get("refreshToken");
+        if (rawToken != null) {
+            refreshTokenService.revokeToken(rawToken);
+        }
+        return ResponseEntity.noContent().build();
     }
 }

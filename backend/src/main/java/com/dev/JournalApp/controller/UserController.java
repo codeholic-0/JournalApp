@@ -1,7 +1,7 @@
 package com.dev.JournalApp.controller;
 
-import com.dev.JournalApp.dto.UserRequest;
-import com.dev.JournalApp.dto.UserResponse;
+import com.dev.JournalApp.dto.request.UserRequest;
+import com.dev.JournalApp.dto.response.UserResponse;
 import com.dev.JournalApp.service.UserService;
 
 import jakarta.validation.Valid;

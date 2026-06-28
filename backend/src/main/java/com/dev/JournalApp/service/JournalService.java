@@ -1,7 +1,7 @@
 package com.dev.JournalApp.service;
 
-import com.dev.JournalApp.dto.JournalRequest;
-import com.dev.JournalApp.dto.JournalResponse;
+import com.dev.JournalApp.dto.request.JournalRequest;
+import com.dev.JournalApp.dto.response.JournalResponse;
 import com.dev.JournalApp.exceptions.JournalOwnershipMismatchException;
 import com.dev.JournalApp.exceptions.ResourceNotFoundException;
 import com.dev.JournalApp.models.JournalEntry;

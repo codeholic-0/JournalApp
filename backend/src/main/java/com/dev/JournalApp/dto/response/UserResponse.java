@@ -1,6 +1,7 @@
-package com.dev.JournalApp.dto;
+package com.dev.JournalApp.dto.response;
 
-import java.time.LocalDateTime;
+import com.dev.JournalApp.enumeration.UserType;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -10,12 +11,9 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class JournalResponse {
+public class UserResponse {
 
     private String id;
-    private String title;
-    private String content;
     private String username;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private List<UserType> roles;
 }
