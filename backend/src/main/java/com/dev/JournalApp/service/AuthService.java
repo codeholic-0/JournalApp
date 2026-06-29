@@ -92,6 +92,7 @@ public class AuthService {
     public AuthResponse refresh(Map<String, String> body) {
         String rawToken = body.get("refreshToken");
         if (rawToken == null) {
+            log.error("Couldn't refresh token for current user");
             throw new BadCredentialsException("Invalid Token!");
         }
         String username = refreshTokenService.extractUsername(rawToken);
@@ -99,7 +100,7 @@ public class AuthService {
                 .orElseThrow(() -> new ResourceNotFoundException("User with username: " + username + " not found"));
         String newaccessToken = jwtUtil.generateAccessToken(username, user.getRoles());
         String newrefreshToken = refreshTokenService.createRefreshToken(username);
-
+        log.info("Token refreshed for user: {}", username);
         return new AuthResponse(newaccessToken, newrefreshToken, username, user.getRoles());
     }
 }

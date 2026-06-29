@@ -35,7 +35,7 @@ public class JwtUtil {
     public String generateAccessToken(String username, List<UserType> roles) {
         return Jwts.builder()
                 .subject(username)
-                .claim("roles", roles.stream().map(Enum::name).toList())
+                .claim("roles", roles.stream().map(role -> role.name()).toList())
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + accessExpiry))
                 .signWith(getSigningKey())

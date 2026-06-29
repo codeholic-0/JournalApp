@@ -27,9 +27,7 @@ public class AuthController {
     private final AuthService authService;
 
     public AuthController(AuthService authService,
-            RefreshTokenService refreshTokenService,
-            JwtUtil jwtUtil,
-            UserRepository userRepository) {
+            RefreshTokenService refreshTokenService) {
         this.authService = authService;
         this.refreshTokenService = refreshTokenService;
     }
