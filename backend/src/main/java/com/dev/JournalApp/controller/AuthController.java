@@ -1,10 +1,8 @@
 package com.dev.JournalApp.controller;
 
-import com.dev.JournalApp.config.JwtUtil;
 import com.dev.JournalApp.dto.request.LoginRequest;
 import com.dev.JournalApp.dto.request.UserRequest;
 import com.dev.JournalApp.dto.response.AuthResponse;
-import com.dev.JournalApp.repository.UserRepository;
 import com.dev.JournalApp.service.AuthService;
 
 import com.dev.JournalApp.service.RefreshTokenService;
