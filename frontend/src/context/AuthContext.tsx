@@ -1,0 +1,106 @@
+import {
+    createContext,
+    useReducer,
+    useEffect,
+    useCallback,
+    type ReactNode,
+} from "react";
+import * as authApi from "../api/auth";
+import { setOnRefreshed, getRefreshToken } from "../api/axios";
+import type { UserResponse } from "../types/user";
+
+type AuthState = {
+    user: UserResponse | null;
+    accessToken: string | null;
+    isAuthenticated: boolean;
+};
+
+const initialState: AuthState = {
+    user: null,
+    accessToken: null,
+    isAuthenticated: false,
+};
+
+type Action =
+    | { type: "LOGIN"; payload: { user: UserResponse; accessToken: string } }
+    | { type: "LOGOUT" }
+    | { type: "REFRESH"; payload: { accessToken: string } };
+
+function reducer(state: AuthState, action: Action): AuthState {
+    switch (action.type) {
+        case "LOGIN":
+            return {
+                user: action.payload.user,
+                accessToken: action.payload.accessToken,
+                isAuthenticated: true,
+            };
+        case "LOGOUT":
+            return initialState;
+        case "REFRESH":
+            return { ...state, accessToken: action.payload.accessToken };
+    }
+}
+
+type AuthContextType = {
+    user: UserResponse | null;
+    accessToken: string | null;
+    isAuthenticated: boolean;
+    login: (username: string, password: string) => Promise<void>;
+    register: (username: string, password: string) => Promise<void>;
+    logout: () => Promise<void>;
+};
+export type { AuthContextType };
+
+const AuthContext = createContext<AuthContextType | null>(null);
+export { AuthContext };
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+    const [state, dispatch] = useReducer(reducer, initialState);
+
+    useEffect(() => {
+        setOnRefreshed((token: string | null) => {
+            if (token)
+                dispatch({ type: "REFRESH", payload: { accessToken: token } });
+            else dispatch({ type: "LOGOUT" });
+        });
+    }, []);
+
+    const login = useCallback(async (username: string, password: string) => {
+        const res = await authApi.login({ username, password });
+        dispatch({
+            type: "LOGIN",
+            payload: {
+                user: { id: "", username: res.username, roles: res.roles },
+                accessToken: res.accessToken,
+            },
+        });
+    }, []);
+
+    const register = useCallback(async (username: string, password: string) => {
+        const res = await authApi.register({ username, password });
+        dispatch({
+            type: "LOGIN",
+            payload: {
+                user: { id: "", username: res.username, roles: res.roles },
+                accessToken: res.accessToken,
+            },
+        });
+    }, []);
+
+    const logout = useCallback(async () => {
+        const rt = getRefreshToken();
+        if (rt)
+            try {
+                await authApi.logout(rt);
+            } catch {
+                /* ignore */
+            }
+        dispatch({ type: "LOGOUT" });
+    }, []);
+
+    return (
+        <AuthContext.Provider value={{ ...state, login, register, logout }}>
+            {children}
+        </AuthContext.Provider>
+    );
+}
