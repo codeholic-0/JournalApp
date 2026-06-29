@@ -3,8 +3,6 @@ package com.dev.JournalApp.config;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
-import tools.jackson.databind.json.JsonMapper;
-
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -15,6 +13,9 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
+import tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
+import tools.jackson.databind.jsontype.PolymorphicTypeValidator;
+
 import org.springframework.data.redis.serializer.GenericJacksonJsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 
@@ -22,40 +23,47 @@ import org.springframework.data.redis.serializer.RedisSerializationContext;
 @EnableCaching
 public class RedisConfig {
 
-    @Bean
-    public CacheManager cacheManager(RedisConnectionFactory connectionFactory, JsonMapper jsonMapper) {
-        RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofMinutes(5))
-                .serializeKeysWith(
-                        RedisSerializationContext.SerializationPair
-                                .fromSerializer(new StringRedisSerializer()))
-                .serializeValuesWith(RedisSerializationContext.SerializationPair
-                        .fromSerializer(new GenericJacksonJsonRedisSerializer(jsonMapper)));
+        private static final PolymorphicTypeValidator ptv = BasicPolymorphicTypeValidator.builder()
+                        .allowIfSubType("com.dev.JournalApp")
+                        .allowIfSubType("java.util.")
+                        .allowIfSubType("java.lang.")
+                        .build();
 
-        return RedisCacheManager.builder(connectionFactory)
-                .cacheDefaults(config)
-                .build();
-    }
+        @Bean
+        public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
 
-    @Bean
-    public RedisTemplate<String, Object> redisTemplate(
-            RedisConnectionFactory connectionFactory,
-            JsonMapper jsonMapper) {
+                GenericJacksonJsonRedisSerializer serializer = GenericJacksonJsonRedisSerializer.builder()
+                                .enableDefaultTyping(ptv)
+                                .build();
 
-        RedisTemplate<String, Object> template = new RedisTemplate<>();
+                RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
+                                .entryTtl(Duration.ofMinutes(5))
+                                .serializeKeysWith(
+                                                RedisSerializationContext.SerializationPair
+                                                                .fromSerializer(new StringRedisSerializer()))
+                                .serializeValuesWith(RedisSerializationContext.SerializationPair
+                                                .fromSerializer(serializer));
 
-        template.setConnectionFactory(connectionFactory);
+                return RedisCacheManager.builder(connectionFactory)
+                                .cacheDefaults(config)
+                                .build();
+        }
 
-        StringRedisSerializer keySerializer = new StringRedisSerializer(StandardCharsets.UTF_8);
-        GenericJacksonJsonRedisSerializer valueSerializer = new GenericJacksonJsonRedisSerializer(jsonMapper);
+        @Bean
+        public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
 
-        template.setKeySerializer(keySerializer);
-        template.setValueSerializer(valueSerializer);
-        template.setHashKeySerializer(keySerializer);
-        template.setHashValueSerializer(valueSerializer);
+                GenericJacksonJsonRedisSerializer valueSerializer = GenericJacksonJsonRedisSerializer.builder()
+                                .enableDefaultTyping(ptv)
+                                .build();
+                StringRedisSerializer keySerializer = new StringRedisSerializer(StandardCharsets.UTF_8);
+                RedisTemplate<String, Object> template = new RedisTemplate<>();
 
-        template.afterPropertiesSet();
-
-        return template;
-    }
+                template.setConnectionFactory(connectionFactory);
+                template.setKeySerializer(keySerializer);
+                template.setValueSerializer(valueSerializer);
+                template.setHashKeySerializer(keySerializer);
+                template.setHashValueSerializer(valueSerializer);
+                template.afterPropertiesSet();
+                return template;
+        }
 }
