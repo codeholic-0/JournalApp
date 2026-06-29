@@ -8,7 +8,12 @@ spring:
   data:
     mongodb:
       auto-index-creation: ${TRUE_OR_FALSE}
-
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+  cache:
+    redis:
+      time-to-live: ${TIMEOUT_MS}
 security:
   bcrypt:
     strength: ${BCRYPT_STRENGTH}

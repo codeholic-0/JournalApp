@@ -18,6 +18,7 @@ import java.util.Map;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Slf4j
@@ -48,6 +49,7 @@ public class AuthService {
         return res;
     }
 
+    @Transactional
     public AuthResponse createNewUser(UserRequest req) {
         if (userRepository.existsByUsername(req.getUsername())) {
             log.warn("Duplicate Registration Attempt: {}", req.getUsername());
@@ -66,6 +68,7 @@ public class AuthService {
         }
     }
 
+    @Transactional
     public AuthResponse login(LoginRequest req) {
         User user = userRepository.findByUsername(req.getUsername())
                 .orElseThrow(() -> new BadCredentialsException("Invalid Credentials!"));
@@ -85,6 +88,7 @@ public class AuthService {
         return res;
     }
 
+    @Transactional
     public AuthResponse refresh(Map<String, String> body) {
         String rawToken = body.get("refreshToken");
         if (rawToken == null) {

@@ -9,8 +9,11 @@ import com.dev.JournalApp.repository.UserRepository;
 
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Slf4j
@@ -37,6 +40,7 @@ public class UserService {
         return res;
     }
 
+    @Cacheable(value = "user", key = "#username")
     public UserResponse getUserByUsername(String username) {
         var user = userRepository
                 .findByUsername(username)
@@ -46,6 +50,8 @@ public class UserService {
         return toUserResponse(user);
     }
 
+    @Transactional
+    @CacheEvict(value = "user", key = "#username")
     public UserResponse updateUserPassword(String username, UserRequest req) {
         var old = userRepository
                 .findByUsername(username)
@@ -57,6 +63,8 @@ public class UserService {
         return toUserResponse(old);
     }
 
+    @Transactional
+    @CacheEvict(value = "user", key = "#username")
     public void deleteUser(String username) {
         var user = userRepository
                 .findByUsername(username)

@@ -12,6 +12,10 @@ import com.dev.JournalApp.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
+
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,6 +52,7 @@ public class JournalService {
     }
 
     @Transactional
+    @CacheEvict(value = "journals", allEntries = true)
     public JournalResponse createJournal(String username, JournalRequest req) {
         User user = userRepository
                 .findByUsername(username)
@@ -62,6 +67,7 @@ public class JournalService {
         return toJournalResponse(res);
     }
 
+    @Cacheable(value = "journal", key = "#journalId")
     public JournalResponse getJournalById(String username, String journalId) {
         var entry = journalRepository
                 .findById(journalId)
@@ -75,6 +81,7 @@ public class JournalService {
         }
     }
 
+    @Cacheable(value = "journals", key = "'user:' + #username")
     public List<JournalResponse> getJournalsByUsername(String username) {
         if (userRepository.existsByUsername(username)) {
             return journalRepository
@@ -88,6 +95,9 @@ public class JournalService {
         }
     }
 
+    @Transactional
+    @Caching(evict = { @CacheEvict(value = "journal", key = "#journalId"),
+            @CacheEvict(value = "journals", allEntries = true) })
     public JournalResponse updateJournal(
             String username,
             String journalId,
@@ -111,6 +121,8 @@ public class JournalService {
     }
 
     @Transactional
+    @Caching(evict = { @CacheEvict(value = "journal", key = "#journalId"),
+            @CacheEvict(value = "journals", allEntries = true) })
     public void deleteJournal(String username, String journalId) {
         var user = userRepository
                 .findByUsername(username)
