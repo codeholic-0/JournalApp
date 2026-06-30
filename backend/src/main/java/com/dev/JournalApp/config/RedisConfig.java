@@ -3,8 +3,12 @@ package com.dev.JournalApp.config;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
+import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CachingConfigurer;
 import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cache.interceptor.CacheErrorHandler;
+import org.springframework.cache.interceptor.SimpleCacheErrorHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
@@ -13,6 +17,7 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
+import lombok.extern.slf4j.Slf4j;
 import tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 import tools.jackson.databind.jsontype.PolymorphicTypeValidator;
 
@@ -21,13 +26,26 @@ import org.springframework.data.redis.serializer.RedisSerializationContext;
 
 @Configuration
 @EnableCaching
-public class RedisConfig {
+@Slf4j
+public class RedisConfig implements CachingConfigurer {
 
         private static final PolymorphicTypeValidator ptv = BasicPolymorphicTypeValidator.builder()
                         .allowIfSubType("com.dev.JournalApp")
                         .allowIfSubType("java.util.")
                         .allowIfSubType("java.lang.")
                         .build();
+
+        @Override
+        @Bean
+        public CacheErrorHandler errorHandler() {
+                return new SimpleCacheErrorHandler() {
+                        @Override
+                        public void handleCacheGetError(RuntimeException exception, Cache cache, Object key) {
+                                log.warn("Cache miss for key {} in {}: {}", key, cache.getName(),
+                                                exception.getMessage());
+                        }
+                };
+        }
 
         @Bean
         public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {

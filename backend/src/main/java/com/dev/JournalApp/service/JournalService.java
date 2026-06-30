@@ -67,7 +67,7 @@ public class JournalService {
         return toJournalResponse(res);
     }
 
-    @Cacheable(value = "journal", key = "#journalId")
+    @Cacheable(value = "journal", key = "#journalId", unless = "#result == null")
     public JournalResponse getJournalById(String username, String journalId) {
         var entry = journalRepository
                 .findById(journalId)
@@ -81,7 +81,7 @@ public class JournalService {
         }
     }
 
-    @Cacheable(value = "journals", key = "'user:' + #username")
+    @Cacheable(value = "journals", key = "'user:' + #username", unless = "#result.isEmpty()")
     public List<JournalResponse> getJournalsByUsername(String username) {
         if (userRepository.existsByUsername(username)) {
             return journalRepository
