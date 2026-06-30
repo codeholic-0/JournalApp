@@ -9,7 +9,10 @@ import { useAuth } from "../hooks/useAuth";
 
 const schema = z.object({
     username: z.string().min(3, "Username must be at least 3 characters"),
-    password: z.string().min(6, "Password must be at least 6 characters"),
+    password: z
+        .string()
+        .min(8, "Password must be 8-24 characters")
+        .max(24, "Password must be 8-24 characters"),
 });
 
 type RegisterForm = z.infer<typeof schema>;
@@ -80,7 +83,7 @@ export default function Register() {
                             <input
                                 {...register("password")}
                                 type="password"
-                                placeholder="Password"
+                                placeholder="Password (8 - 24 characters)"
                                 className="w-full pl-9 pr-3 py-2 rounded-lg border border-outline bg-surface text-on-surface text-sm placeholder:text-on-surface-muted focus:outline-none focus:ring-2 focus:ring-primary transition-shadow"
                             />
                             {errors.password && (

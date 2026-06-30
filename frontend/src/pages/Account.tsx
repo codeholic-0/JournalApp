@@ -7,10 +7,14 @@ import { Lock, Loader2, Trash2, AlertTriangle, X } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../hooks/useAuth";
 import { useUpdatePassword, useDeleteUser } from "../hooks/useUser";
+import axios from "axios";
 
 const schema = z
     .object({
-        password: z.string().min(6, "Password must be at least 6 characters"),
+        password: z
+            .string()
+            .min(8, "Password must be at least 8 characters")
+            .max(24, "Password must be at most 24 characters"),
         confirm: z.string(),
     })
     .refine((data) => data.password === data.confirm, {
@@ -41,8 +45,11 @@ export default function Account() {
                 data: { username, password: data.password },
             });
             toast.success("Password updated");
-        } catch {
-            toast.error("Failed to update password");
+        } catch (e) {
+            const msg = axios.isAxiosError(e)
+                ? (e.response?.data?.message ?? "Failed to update password")
+                : "Failed to update password";
+            toast.error(msg);
         }
     };
 
@@ -75,7 +82,7 @@ export default function Account() {
                     <input
                         {...register("password")}
                         type="password"
-                        placeholder="New password"
+                        placeholder="New password (8 - 24 characters)"
                         className="w-full pl-9 pr-3 py-2 rounded-lg border border-outline bg-surface-alt text-on-surface text-sm placeholder:text-on-surface-muted focus:outline-none focus:ring-2 focus:ring-primary transition-shadow"
                     />
                     {errors.password && (
