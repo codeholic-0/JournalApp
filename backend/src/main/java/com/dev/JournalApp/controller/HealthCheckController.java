@@ -10,8 +10,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.dev.JournalApp.dto.response.HealthResponse;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
 @RequestMapping("/api/check")
+@Tag(name = "Health", description = "Health check endpoints")
 public class HealthCheckController {
 
     private final MongoTemplate mongoTemplate;
@@ -20,6 +25,8 @@ public class HealthCheckController {
         this.mongoTemplate = mongoTemplate;
     }
 
+    @Operation(summary = "Health check", description = "Check application and database connectivity status")
+    @ApiResponse(responseCode = "200", description = "Health status returned")
     @GetMapping
     public ResponseEntity<HealthResponse> checkHealth() {
         String status;

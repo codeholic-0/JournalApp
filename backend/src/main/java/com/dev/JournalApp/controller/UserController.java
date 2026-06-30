@@ -4,6 +4,9 @@ import com.dev.JournalApp.dto.request.UserRequest;
 import com.dev.JournalApp.dto.response.UserResponse;
 import com.dev.JournalApp.service.UserService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 import org.springframework.http.ResponseEntity;
@@ -13,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/users/{username}")
 @PreAuthorize("#username == authentication.name")
+@Tag(name = "Users", description = "User management endpoints")
 public class UserController {
     private final UserService userService;
 
@@ -20,12 +24,18 @@ public class UserController {
         this.userService = userService;
     }
 
+    @Operation(summary = "Get user", description = "Fetch user profile by username")
+    @ApiResponse(responseCode = "200", description = "User found")
+    @ApiResponse(responseCode = "404", description = "User not found")
     @GetMapping
     public ResponseEntity<UserResponse> getUserByUsername(@PathVariable String username) {
         UserResponse res = userService.getUserByUsername(username);
         return ResponseEntity.ok(res);
     }
 
+    @Operation(summary = "Update password", description = "Update the authenticated user's password")
+    @ApiResponse(responseCode = "200", description = "Password updated")
+    @ApiResponse(responseCode = "404", description = "User not found")
     @PatchMapping
     public ResponseEntity<UserResponse> updateUserPassword(
             @PathVariable String username,
@@ -34,6 +44,9 @@ public class UserController {
         return ResponseEntity.ok(res);
     }
 
+    @Operation(summary = "Delete user", description = "Delete the authenticated user and all their journals")
+    @ApiResponse(responseCode = "204", description = "User deleted")
+    @ApiResponse(responseCode = "404", description = "User not found")
     @DeleteMapping
     public ResponseEntity<Void> deleteUser(@PathVariable String username) {
         userService.deleteUser(username);

@@ -14,6 +14,10 @@ spring:
   cache:
     redis:
       time-to-live: ${TIMEOUT_MS}
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+server:
+  shutdown: graceful
 security:
   bcrypt:
     strength: ${BCRYPT_STRENGTH}
