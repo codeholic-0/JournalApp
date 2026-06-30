@@ -1,11 +1,17 @@
 import api from "./axios";
-import type { JournalResponse, JournalRequest } from "../types/journal";
+import type {
+    JournalResponse,
+    JournalRequest,
+    PagedResponse,
+} from "../types/journal";
 
 export const getJournals = async (
     username: string,
-): Promise<JournalResponse[]> => {
-    const { data } = await api.get<JournalResponse[]>(
-        `/api/users/${username}/journals`,
+    page: number = 0,
+    size: number = 10,
+): Promise<PagedResponse<JournalResponse>> => {
+    const { data } = await api.get<PagedResponse<JournalResponse>>(
+        `/api/users/${username}/journals?page=${page}&size=${size}`,
     );
     return data;
 };

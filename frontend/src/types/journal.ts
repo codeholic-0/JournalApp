@@ -10,3 +10,15 @@ export interface JournalRequest {
     title: string;
     content?: string;
 }
+
+export interface PageMetadata {
+    size: number;
+    totalElements: number;
+    totalPages: number;
+    number: number;
+}
+
+export interface PagedResponse<T> {
+    content: T[];
+    page: PageMetadata;
+}

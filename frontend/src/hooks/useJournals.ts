@@ -2,11 +2,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as journalsApi from "../api/journals";
 import type { JournalRequest } from "../types/journal";
 
-export const useJournals = (username: string) =>
+export const useJournals = (username: string, page: number = 0) =>
     useQuery({
-        queryKey: ["journals", username],
-        queryFn: () => journalsApi.getJournals(username),
+        queryKey: ["journals", username, page],
+        queryFn: () => journalsApi.getJournals(username, page),
         enabled: !!username,
+        placeholderData: (previousData) => previousData,
     });
 
 export const useJournal = (username: string, id: string) =>

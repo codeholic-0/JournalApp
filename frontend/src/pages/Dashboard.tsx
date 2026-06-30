@@ -7,6 +7,8 @@ import {
     Eye,
     Pencil,
     Trash2,
+    ChevronLeft,
+    ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../hooks/useAuth";
@@ -16,16 +18,19 @@ import ConfirmDialog from "../components/ConfirmDialog";
 
 export default function Dashboard() {
     const { user } = useAuth();
-    const {
-        data: journals,
-        isLoading,
-        isError,
-    } = useJournals(user?.username ?? "");
+    const [page, setPage] = useState(0);
+    const { data, isLoading, isError } = useJournals(
+        user?.username ?? "",
+        page,
+    );
     const deleteJournal = useDeleteJournal();
     const [deleteTarget, setDeleteTarget] = useState<{
         id: string;
         title: string;
     } | null>(null);
+
+    const journals = data?.content ?? [];
+    const totalPages = data?.page?.totalPages ?? 0;
 
     const handleDelete = async () => {
         if (!deleteTarget) return;
@@ -36,6 +41,9 @@ export default function Dashboard() {
             });
             toast.success("Journal deleted");
             setDeleteTarget(null);
+            if (journals.length === 1 && page > 0) {
+                setPage((p) => p - 1);
+            }
         } catch {
             toast.error("Failed to delete journal");
         }
@@ -75,7 +83,7 @@ export default function Dashboard() {
                 </Link>
             </div>
 
-            {journals?.length === 0 ? (
+            {journals.length === 0 && page === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 space-y-4">
                     <FileText size={48} className="text-on-surface-muted" />
                     <p className="text-on-surface-muted text-sm">
@@ -90,68 +98,96 @@ export default function Dashboard() {
                     </Link>
                 </div>
             ) : (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {journals?.map((j) => (
-                        <div
-                            key={j.id}
-                            className="group bg-surface-alt rounded-xl border border-outline p-4 space-y-3 hover:scale-[1.02] hover:shadow-md transition-all duration-200"
-                        >
-                            <div className="flex items-start gap-3">
-                                <FileText
-                                    size={18}
-                                    className="text-primary shrink-0 mt-0.5"
-                                />
-                                <div className="min-w-0 flex-1">
-                                    <h2 className="font-semibold text-on-surface truncate">
-                                        {j.title}
-                                    </h2>
+                <>
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {journals.map((j) => (
+                            <div
+                                key={j.id}
+                                className="group bg-surface-alt rounded-xl border border-outline p-4 space-y-3 hover:scale-[1.02] hover:shadow-md transition-all duration-200"
+                            >
+                                <div className="flex items-start gap-3">
+                                    <FileText
+                                        size={18}
+                                        className="text-primary shrink-0 mt-0.5"
+                                    />
+                                    <div className="min-w-0 flex-1">
+                                        <h2 className="font-semibold text-on-surface truncate">
+                                            {j.title}
+                                        </h2>
+                                    </div>
+                                </div>
+
+                                {j.content && (
+                                    <p className="text-sm text-on-surface-muted line-clamp-2 leading-relaxed">
+                                        {j.content}
+                                    </p>
+                                )}
+
+                                <div className="flex items-center gap-1.5 text-xs text-on-surface-muted">
+                                    <Calendar size={12} />
+                                    <span>
+                                        {new Date(
+                                            j.createdAt,
+                                        ).toLocaleDateString()}
+                                    </span>
+                                </div>
+
+                                <div className="flex gap-3 pt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                    <Link
+                                        to={`/journals/${j.id}`}
+                                        className="flex items-center gap-1 text-xs text-on-surface-muted hover:text-primary transition-colors"
+                                    >
+                                        <Eye size={14} />
+                                        View
+                                    </Link>
+                                    <Link
+                                        to={`/journals/${j.id}/edit`}
+                                        className="flex items-center gap-1 text-xs text-on-surface-muted hover:text-primary transition-colors"
+                                    >
+                                        <Pencil size={14} />
+                                        Edit
+                                    </Link>
+                                    <button
+                                        onClick={() =>
+                                            setDeleteTarget({
+                                                id: j.id,
+                                                title: j.title,
+                                            })
+                                        }
+                                        className="flex items-center gap-1 text-xs text-on-surface-muted hover:text-red-400 transition-colors"
+                                    >
+                                        <Trash2 size={14} />
+                                        Delete
+                                    </button>
                                 </div>
                             </div>
+                        ))}
+                    </div>
 
-                            {j.content && (
-                                <p className="text-sm text-on-surface-muted line-clamp-2 leading-relaxed">
-                                    {j.content}
-                                </p>
-                            )}
-
-                            <div className="flex items-center gap-1.5 text-xs text-on-surface-muted">
-                                <Calendar size={12} />
-                                <span>
-                                    {new Date(j.createdAt).toLocaleDateString()}
-                                </span>
-                            </div>
-
-                            <div className="flex gap-3 pt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                                <Link
-                                    to={`/journals/${j.id}`}
-                                    className="flex items-center gap-1 text-xs text-on-surface-muted hover:text-primary transition-colors"
-                                >
-                                    <Eye size={14} />
-                                    View
-                                </Link>
-                                <Link
-                                    to={`/journals/${j.id}/edit`}
-                                    className="flex items-center gap-1 text-xs text-on-surface-muted hover:text-primary transition-colors"
-                                >
-                                    <Pencil size={14} />
-                                    Edit
-                                </Link>
-                                <button
-                                    onClick={() =>
-                                        setDeleteTarget({
-                                            id: j.id,
-                                            title: j.title,
-                                        })
-                                    }
-                                    className="flex items-center gap-1 text-xs text-on-surface-muted hover:text-red-400 transition-colors"
-                                >
-                                    <Trash2 size={14} />
-                                    Delete
-                                </button>
-                            </div>
+                    {totalPages > 1 && (
+                        <div className="flex items-center justify-center gap-4 pt-4">
+                            <button
+                                onClick={() => setPage((p) => p - 1)}
+                                disabled={page === 0}
+                                className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-outline text-sm text-on-surface-muted hover:bg-hover hover:text-on-surface disabled:opacity-30 disabled:pointer-events-none transition-colors active:scale-[0.98]"
+                            >
+                                <ChevronLeft size={16} />
+                                Prev
+                            </button>
+                            <span className="text-sm text-on-surface-muted">
+                                Page {page + 1} of {totalPages}
+                            </span>
+                            <button
+                                onClick={() => setPage((p) => p + 1)}
+                                disabled={page >= totalPages - 1}
+                                className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-outline text-sm text-on-surface-muted hover:bg-hover hover:text-on-surface disabled:opacity-30 disabled:pointer-events-none transition-colors active:scale-[0.98]"
+                            >
+                                Next
+                                <ChevronRight size={16} />
+                            </button>
                         </div>
-                    ))}
-                </div>
+                    )}
+                </>
             )}
 
             <ConfirmDialog

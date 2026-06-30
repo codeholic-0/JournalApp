@@ -9,7 +9,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -56,9 +58,10 @@ public class JournalController {
     @ApiResponse(responseCode = "200", description = "List of journals")
     @ApiResponse(responseCode = "404", description = "User not found")
     @GetMapping
-    public ResponseEntity<List<JournalResponse>> getJournalsByUsername(
-            @PathVariable String username) {
-        var res = journalService.getJournalsByUsername(username);
+    public ResponseEntity<Page<JournalResponse>> getJournalsByUsername(
+            @PathVariable String username,
+            @PageableDefault(size = 10) Pageable pageable) {
+        var res = journalService.getJournalsByUsername(username, pageable);
         return ResponseEntity.ok(res);
     }
 

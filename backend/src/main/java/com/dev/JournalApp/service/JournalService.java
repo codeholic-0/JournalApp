@@ -11,11 +11,12 @@ import com.dev.JournalApp.repository.UserRepository;
 
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.List;
+import java.time.Duration;
+import java.util.Set;
 
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.Caching;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,12 +26,15 @@ public class JournalService {
 
     private final JournalRepository journalRepository;
     private final UserRepository userRepository;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     public JournalService(
             JournalRepository journalRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            RedisTemplate<String, Object> redisTemplate) {
         this.journalRepository = journalRepository;
         this.userRepository = userRepository;
+        this.redisTemplate = redisTemplate;
     }
 
     private JournalEntry toJournalEntry(JournalRequest req) {
@@ -52,7 +56,6 @@ public class JournalService {
     }
 
     @Transactional
-    @CacheEvict(value = "journals", allEntries = true)
     public JournalResponse createJournal(String username, JournalRequest req) {
         User user = userRepository
                 .findByUsername(username)
@@ -63,32 +66,44 @@ public class JournalService {
         var res = journalRepository.save(entry);
         user.getJournals().add(entry.getId());
         userRepository.save(user);
+        evictJournalsCache(username);
         log.info("Journal created: {} for user: {}", req.getTitle(), username);
         return toJournalResponse(res);
     }
 
-    @Cacheable(value = "journal", key = "#journalId", unless = "#result == null")
     public JournalResponse getJournalById(String username, String journalId) {
+        String key = "journal:" + journalId;
+        try {
+            Object cached = redisTemplate.opsForValue().get(key);
+            if (cached instanceof JournalResponse response) {
+                return response;
+            }
+        } catch (Exception e) {
+            log.warn("Cache read error for key {}: {}", key, e.getMessage());
+        }
         var entry = journalRepository
                 .findById(journalId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Journal not found with id: " + journalId));
         if (entry.getUsername().equals(username)) {
-            return toJournalResponse(entry);
+            JournalResponse response = toJournalResponse(entry);
+            try {
+                redisTemplate.opsForValue().set(key, response, Duration.ofMinutes(5));
+            } catch (Exception e) {
+                log.warn("Cache write error for key {}: {}", key, e.getMessage());
+            }
+            return response;
         } else {
             log.warn("Ownership mismatch! user: {} tried to access journal: {}", username, entry.getTitle());
             throw new JournalOwnershipMismatchException(username);
         }
     }
 
-    @Cacheable(value = "journals", key = "'user:' + #username", unless = "#result.isEmpty()")
-    public List<JournalResponse> getJournalsByUsername(String username) {
+    public Page<JournalResponse> getJournalsByUsername(String username, Pageable pageable) {
         if (userRepository.existsByUsername(username)) {
             return journalRepository
-                    .findByUsernameOrderByCreatedAtDesc(username)
-                    .stream()
-                    .map(this::toJournalResponse)
-                    .toList();
+                    .findByUsernameOrderByCreatedAtDesc(username, pageable)
+                    .map(this::toJournalResponse);
         } else {
             throw new ResourceNotFoundException(
                     "User not found with username: " + username);
@@ -96,8 +111,6 @@ public class JournalService {
     }
 
     @Transactional
-    @Caching(evict = { @CacheEvict(value = "journal", key = "#journalId"),
-            @CacheEvict(value = "journals", allEntries = true) })
     public JournalResponse updateJournal(
             String username,
             String journalId,
@@ -112,6 +125,7 @@ public class JournalService {
             if (updates.getContent() != null)
                 entry.setContent(updates.getContent());
             journalRepository.save(entry);
+            evictJournalCache(journalId);
             log.info("Journal: {} updated", entry.getId());
             return toJournalResponse(entry);
         } else {
@@ -121,8 +135,6 @@ public class JournalService {
     }
 
     @Transactional
-    @Caching(evict = { @CacheEvict(value = "journal", key = "#journalId"),
-            @CacheEvict(value = "journals", allEntries = true) })
     public void deleteJournal(String username, String journalId) {
         var user = userRepository
                 .findByUsername(username)
@@ -136,10 +148,31 @@ public class JournalService {
             journalRepository.delete(entry);
             user.getJournals().remove(journalId);
             userRepository.save(user);
+            evictJournalCache(journalId);
+            evictJournalsCache(username);
             log.info("Journal {} deleted for user: {}", entry.getId(), username);
         } else {
             log.warn("Ownership mismatch! user: {} tried to access journal: {}", username, entry.getId());
             throw new JournalOwnershipMismatchException(username);
+        }
+    }
+
+    private void evictJournalCache(String journalId) {
+        try {
+            redisTemplate.delete("journal:" + journalId);
+        } catch (Exception e) {
+            log.warn("Failed to evict journal cache for {}: {}", journalId, e.getMessage());
+        }
+    }
+
+    private void evictJournalsCache(String username) {
+        try {
+            Set<String> keys = redisTemplate.keys("journals:" + username + ":page:*");
+            if (keys != null && !keys.isEmpty()) {
+                redisTemplate.delete(keys);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to evict journals cache for {}: {}", username, e.getMessage());
         }
     }
 }
