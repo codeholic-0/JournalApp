@@ -26,3 +26,10 @@ jwt:
   secret: ${jwt.secret}
   access-expiry: ${jwt.access-expiry}
   refresh-expiry: ${jwt.refresh-expiry}
+resilience4j:
+  ratelimiter:
+    instances:
+      authEndpoint:
+        limit-for-period: 5
+        limit-refresh-period: 1m
+        timeout-duration: 0s

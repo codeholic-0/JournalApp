@@ -7,6 +7,7 @@ import com.dev.JournalApp.service.AuthService;
 
 import com.dev.JournalApp.service.RefreshTokenService;
 
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -38,6 +39,7 @@ public class AuthController {
     @Operation(summary = "Register a new User", description = "Creates account and returns JWT tokens")
     @ApiResponse(responseCode = "201", description = "User created successfully")
     @ApiResponse(responseCode = "409", description = "Username already exists")
+    @RateLimiter(name = "authEndpoint")
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> createNewUser(
             @Valid @RequestBody UserRequest req) {
@@ -48,6 +50,7 @@ public class AuthController {
     @Operation(summary = "Login", description = "Authenticate user and return JWT tokens")
     @ApiResponse(responseCode = "200", description = "Login successful")
     @ApiResponse(responseCode = "401", description = "Invalid credentials")
+    @RateLimiter(name = "authEndpoint")
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(
             @Valid @RequestBody LoginRequest req) {
