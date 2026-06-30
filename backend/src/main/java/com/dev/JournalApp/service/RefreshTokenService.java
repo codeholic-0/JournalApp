@@ -8,6 +8,7 @@ import java.util.HexFormat;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -85,10 +86,10 @@ public class RefreshTokenService {
         RefreshToken token = refreshTokenRepository.findByTokenHash(hash)
                 .orElseThrow(() -> new ResourceNotFoundException("Invalid refresh token"));
         if (token.isRevoked()) {
-            throw new RuntimeException("Refresh token revoked");
+            throw new BadCredentialsException("Refresh token revoked");
         }
         if (token.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("Refresh token expired");
+            throw new BadCredentialsException("Refresh token expired");
         }
         return token.getUsername();
     }

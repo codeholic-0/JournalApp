@@ -16,9 +16,13 @@ export const login = async (data: LoginRequest): Promise<AuthResponse> => {
 };
 
 export const refresh = async (token: string): Promise<AuthResponse> => {
-    const { data } = await axios.post<AuthResponse>("/api/auth/refresh", {
-        refreshToken: token,
-    });
+    const base = import.meta.env.VITE_API_URL || "";
+    const { data } = await axios.post<AuthResponse>(
+        base + "/api/auth/refresh",
+        {
+            refreshToken: token,
+        },
+    );
     return data;
 };
 
