@@ -18,18 +18,21 @@ type AuthState = {
     user: UserResponse | null;
     accessToken: string | null;
     isAuthenticated: boolean;
+    loading: boolean; // ← new
 };
 
 const initialState: AuthState = {
     user: null,
     accessToken: null,
     isAuthenticated: false,
+    loading: true, // ← starts true
 };
 
 type Action =
     | { type: "LOGIN"; payload: { user: UserResponse; accessToken: string } }
     | { type: "LOGOUT" }
-    | { type: "REFRESH"; payload: { accessToken: string } };
+    | { type: "REFRESH"; payload: { accessToken: string } }
+    | { type: "LOADED" };
 
 function reducer(state: AuthState, action: Action): AuthState {
     switch (action.type) {
@@ -38,11 +41,14 @@ function reducer(state: AuthState, action: Action): AuthState {
                 user: action.payload.user,
                 accessToken: action.payload.accessToken,
                 isAuthenticated: true,
+                loading: false,
             };
         case "LOGOUT":
-            return initialState;
+            return { ...initialState, loading: false };
         case "REFRESH":
             return { ...state, accessToken: action.payload.accessToken };
+        case "LOADED":
+            return { ...state, loading: false };
     }
 }
 
@@ -50,6 +56,7 @@ type AuthContextType = {
     user: UserResponse | null;
     accessToken: string | null;
     isAuthenticated: boolean;
+    loading: boolean;
     login: (username: string, password: string) => Promise<void>;
     register: (username: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
@@ -72,7 +79,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         const rt = getRefreshToken();
-        if (!rt) return;
+        if (!rt) {
+            dispatch({ type: "LOADED" });
+            return;
+        }
         authApi
             .refresh(rt)
             .then((res) => {
@@ -82,7 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     type: "LOGIN",
                     payload: {
                         user: {
-                            id: "",
+                            id: res.id,
                             username: res.username,
                             roles: res.roles,
                         },
@@ -92,6 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             })
             .catch(() => {
                 setRefreshToken(null);
+                dispatch({ type: "LOADED" });
             });
     }, []);
 
@@ -100,7 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         dispatch({
             type: "LOGIN",
             payload: {
-                user: { id: "", username: res.username, roles: res.roles },
+                user: { id: res.id, username: res.username, roles: res.roles },
                 accessToken: res.accessToken,
             },
         });
@@ -111,7 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         dispatch({
             type: "LOGIN",
             payload: {
-                user: { id: "", username: res.username, roles: res.roles },
+                user: { id: res.id, username: res.username, roles: res.roles },
                 accessToken: res.accessToken,
             },
         });

@@ -42,6 +42,7 @@ public class AuthService {
 
     private AuthResponse toUserResponse(User user, String accessToken, String refreshToken) {
         AuthResponse res = new AuthResponse();
+        res.setId(user.getId());
         res.setUsername(user.getUsername());
         res.setRoles(user.getRoles());
         res.setAccessToken(accessToken);
@@ -81,6 +82,7 @@ public class AuthService {
         String refreshToken = refreshTokenService.createRefreshToken(user.getUsername());
 
         AuthResponse res = new AuthResponse();
+        res.setId(user.getId());
         res.setAccessToken(accessToken);
         res.setRefreshToken(refreshToken);
         res.setUsername(user.getUsername());
@@ -101,6 +103,6 @@ public class AuthService {
         String newaccessToken = jwtUtil.generateAccessToken(username, user.getRoles());
         String newrefreshToken = refreshTokenService.createRefreshToken(username);
         log.info("Token refreshed for user: {}", username);
-        return new AuthResponse(newaccessToken, newrefreshToken, username, user.getRoles());
+        return new AuthResponse(user.getId(), newaccessToken, newrefreshToken, username, user.getRoles());
     }
 }

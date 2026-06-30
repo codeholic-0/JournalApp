@@ -6,6 +6,7 @@ export interface LoginRequest {
 }
 
 export interface AuthResponse {
+    id: string;
     accessToken: string;
     refreshToken: string;
     username: string;

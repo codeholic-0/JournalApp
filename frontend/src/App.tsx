@@ -10,44 +10,52 @@ import Dashboard from "./pages/Dashboard";
 import JournalEditor from "./pages/JournalEditor";
 import JournalDetail from "./pages/JournalDetail";
 import Account from "./pages/Account";
+import NotFound from "./pages/NotFound";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 const queryClient = new QueryClient();
 
 export default function App() {
     return (
-        <QueryClientProvider client={queryClient}>
-            <AuthProvider>
-                <BrowserRouter>
-                    <Routes>
-                        <Route path="/login" element={<Login />} />
-                        <Route path="/register" element={<Register />} />
-                        <Route element={<ProtectedRoute />}>
-                            <Route element={<AppLayout />}>
-                                <Route index element={<Dashboard />} />
-                                <Route
-                                    path="journals/new"
-                                    element={<JournalEditor />}
-                                />
-                                <Route
-                                    path="journals/:id"
-                                    element={<JournalDetail />}
-                                />
-                                <Route
-                                    path="journals/:id/edit"
-                                    element={<JournalEditor />}
-                                />
-                                <Route path="account" element={<Account />} />
+        <ErrorBoundary>
+            <QueryClientProvider client={queryClient}>
+                <AuthProvider>
+                    <BrowserRouter>
+                        <Routes>
+                            <Route path="/login" element={<Login />} />
+                            <Route path="/register" element={<Register />} />
+                            <Route element={<ProtectedRoute />}>
+                                <Route element={<AppLayout />}>
+                                    <Route index element={<Dashboard />} />
+                                    <Route
+                                        path="journals/new"
+                                        element={<JournalEditor />}
+                                    />
+                                    <Route
+                                        path="journals/:id"
+                                        element={<JournalDetail />}
+                                    />
+                                    <Route
+                                        path="journals/:id/edit"
+                                        element={<JournalEditor />}
+                                    />
+                                    <Route
+                                        path="account"
+                                        element={<Account />}
+                                    />
+                                </Route>
                             </Route>
-                        </Route>
-                    </Routes>
-                </BrowserRouter>
-            </AuthProvider>
-            <Toaster
-                theme="dark"
-                position="bottom-right"
-                richColors
-                closeButton
-            />
-        </QueryClientProvider>
+                            <Route path="*" element={<NotFound />} />
+                        </Routes>
+                    </BrowserRouter>
+                </AuthProvider>
+                <Toaster
+                    theme="dark"
+                    position="bottom-right"
+                    richColors
+                    closeButton
+                />
+            </QueryClientProvider>
+        </ErrorBoundary>
     );
 }

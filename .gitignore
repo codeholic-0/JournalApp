@@ -63,3 +63,7 @@ dist-ssr/
 *.njsproj
 *.sln
 *.sw?
+
+#Secrets
+.env.docker
+.env

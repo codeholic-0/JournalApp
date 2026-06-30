@@ -1,0 +1,25 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_MONGODB_URI: "${SPRING_MONGODB_URI}"
+      JWT_SECRET: "${JWT_SECRET}"
+      JWT_ACCESS_EXPIRY: "${JWT_ACCESS_EXPIRY}"
+      JWT_REFRESH_EXPIRY: "${JWT_REFRESH_EXPIRY}"
+      APP_NAME: "${APP_NAME}"
+      TRUE_OR_FALSE: "${TRUE_OR_FALSE}"
+      TIMEOUT_MS: "${TIMEOUT_MS}"
+      BCRYPT_STRENGTH: "${BCRYPT_STRENGTH}"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+    depends_on:
+      redis:
+        condition: service_started
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"

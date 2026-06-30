@@ -1,0 +1,9 @@
+target/
+logs/
+*.log
+.idea/
+.vscode/
+.zed/
+*.iml
+.DS_Store
+**/application-local.yml

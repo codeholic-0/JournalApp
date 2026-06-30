@@ -1,10 +1,8 @@
 spring:
-  profiles:
-    active: local
   application:
     name: ${APP_NAME}
   mongodb:
-    uri: ${MONGODB_URI}
+    uri: ${SPRING_MONGODB_URI}
   data:
     mongodb:
       auto-index-creation: ${TRUE_OR_FALSE}
@@ -23,9 +21,9 @@ security:
     strength: ${BCRYPT_STRENGTH}
 
 jwt:
-  secret: ${jwt.secret}
-  access-expiry: ${jwt.access-expiry}
-  refresh-expiry: ${jwt.refresh-expiry}
+  secret: ${JWT_SECRET}
+  access-expiry: ${JWT_ACCESS_EXPIRY}
+  refresh-expiry: ${JWT_REFRESH_EXPIRY}
 resilience4j:
   ratelimiter:
     instances:
