@@ -1,27 +1,85 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #1976d2;
-  --color-primary-hover: #1565c0;
-  --color-primary-light: #bbdefb;
-  --color-secondary: #ff6f00;
-  --color-secondary-hover: #e65100;
-  --color-surface: #ffffff;
-  --color-surface-alt: #f5f5f5;
-  --color-on-surface: #1c1b1f;
-  --color-outline: #74777f;
+    --color-surface: #ffffff;
+    --color-surface-alt: #f5f5f5;
+    --color-surface-raised: #ffffff;
+    --color-on-surface: #1a1a1a;
+    --color-on-surface-muted: #6b7280;
+    --color-primary: #1976d2;
+    --color-primary-hover: #1565c0;
+    --color-outline: #e5e7eb;
+    --color-hover: #f0f0f0;
 }
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 .dark {
-  --color-primary: #90caf9;
-  --color-primary-hover: #64b5f6;
-  --color-primary-light: #1a237e;
-  --color-secondary: #ffb74d;
-  --color-secondary-hover: #ffa726;
-  --color-surface: #121212;
-  --color-surface-alt: #1e1e1e;
-  --color-on-surface: #e6e1e5;
-  --color-outline: #938f99;
+    --color-surface: #1a1a1a;
+    --color-surface-alt: #202020;
+    --color-surface-raised: #252525;
+    --color-on-surface: #e0e0e0;
+    --color-on-surface-muted: #9ca3af;
+    --color-primary: #5192e1;
+    --color-primary-hover: #6aa3f0;
+    --color-outline: #333333;
+    --color-hover: #2a2a2a;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+@utility animate-fadeIn {
+    animation: fadeIn 0.2s ease-out;
+}
+
+@utility animate-scaleIn {
+    animation: scaleIn 0.2s ease-out;
+}
+
+@utility animate-shimmer {
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.05) 50%,
+        transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+html {
+    background-color: var(--color-surface);
+    color: var(--color-on-surface);
+    transition:
+        background-color 0.3s,
+        color 0.15s;
 }

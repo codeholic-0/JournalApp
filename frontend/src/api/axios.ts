@@ -1,15 +1,15 @@
 import axios from "axios";
 
-let refreshToken: string | null = null;
 let accessToken: string | null = null;
 
 export let onRefreshed: ((token: string | null) => void) | null = null;
 
 export const setRefreshToken = (token: string | null) => {
-    refreshToken = token;
+    if (token) localStorage.setItem("refreshToken", token);
+    else localStorage.removeItem("refreshToken");
 };
 
-export const getRefreshToken = () => refreshToken;
+export const getRefreshToken = () => localStorage.getItem("refreshToken");
 
 export const setAccessToken = (token: string | null) => {
     accessToken = token;
@@ -36,13 +36,13 @@ api.interceptors.response.use(
             return Promise.reject(error);
         }
         original._retry = true;
-        if (!refreshToken) {
+        if (!getRefreshToken()) {
             onRefreshed?.(null);
             return Promise.reject(error);
         }
         try {
             const { data } = await axios.post("/api/auth/refresh", {
-                refreshToken,
+                refreshToken: getRefreshToken(),
             });
             setRefreshToken(data.refreshToken);
             setAccessToken(data.accessToken);

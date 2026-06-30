@@ -3,6 +3,8 @@ import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { Lock, User, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { useAuth } from "../hooks/useAuth";
 
 const schema = z.object({
@@ -19,7 +21,6 @@ export default function Login() {
     const {
         register,
         handleSubmit,
-        setError,
         formState: { errors, isSubmitting },
     } = useForm<LoginForm>({ resolver: zodResolver(schema) });
 
@@ -30,73 +31,88 @@ export default function Login() {
     const onSubmit = async (data: LoginForm) => {
         try {
             await login(data.username, data.password);
+            toast.success("Welcome back!");
             navigate("/", { replace: true });
         } catch {
-            setError("root", { message: "Invalid username or password" });
+            toast.error("Invalid username or password");
         }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-surface-alt px-4">
-            <form
-                onSubmit={handleSubmit(onSubmit)}
-                className="w-full max-w-sm bg-surface p-6 rounded-xl shadow space-y-4"
-            >
-                <h1 className="text-xl font-bold text-on-surface text-center">
-                    Sign in
-                </h1>
+        <div className="min-h-screen flex items-center justify-center bg-surface px-4">
+            <div className="w-full max-w-sm animate-fadeIn">
+                <div className="bg-surface-alt rounded-xl border border-outline p-8 space-y-6">
+                    <div className="text-center space-y-2">
+                        <div className="mx-auto w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                            <Lock size={20} className="text-primary" />
+                        </div>
+                        <h1 className="text-xl font-semibold text-on-surface">
+                            Sign in
+                        </h1>
+                    </div>
 
-                <div>
-                    <input
-                        {...register("username")}
-                        placeholder="Username"
-                        className="w-full px-3 py-2 rounded-lg border border-outline bg-surface text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
-                    {errors.username && (
-                        <p className="text-sm text-red-500 mt-1">
-                            {errors.username.message}
-                        </p>
-                    )}
-                </div>
-
-                <div>
-                    <input
-                        {...register("password")}
-                        type="password"
-                        placeholder="Password"
-                        className="w-full px-3 py-2 rounded-lg border border-outline bg-surface text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
-                    {errors.password && (
-                        <p className="text-sm text-red-500 mt-1">
-                            {errors.password.message}
-                        </p>
-                    )}
-                </div>
-
-                {errors.root && (
-                    <p className="text-sm text-red-500 text-center">
-                        {errors.root.message}
-                    </p>
-                )}
-
-                <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full py-2 rounded-lg bg-primary text-white font-medium hover:bg-primary-hover disabled:opacity-50 transition-colors"
-                >
-                    {isSubmitting ? "Signing in..." : "Sign in"}
-                </button>
-
-                <p className="text-sm text-center text-outline">
-                    Don't have an account?{" "}
-                    <Link
-                        to="/register"
-                        className="text-primary hover:underline"
+                    <form
+                        onSubmit={handleSubmit(onSubmit)}
+                        className="space-y-4"
                     >
-                        Register
-                    </Link>
-                </p>
-            </form>
+                        <div className="relative">
+                            <User
+                                size={16}
+                                className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-muted"
+                            />
+                            <input
+                                {...register("username")}
+                                placeholder="Username"
+                                className="w-full pl-9 pr-3 py-2 rounded-lg border border-outline bg-surface text-on-surface text-sm placeholder:text-on-surface-muted focus:outline-none focus:ring-2 focus:ring-primary transition-shadow"
+                            />
+                            {errors.username && (
+                                <p className="text-xs text-red-400 mt-1">
+                                    {errors.username.message}
+                                </p>
+                            )}
+                        </div>
+
+                        <div className="relative">
+                            <Lock
+                                size={16}
+                                className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-muted"
+                            />
+                            <input
+                                {...register("password")}
+                                type="password"
+                                placeholder="Password"
+                                className="w-full pl-9 pr-3 py-2 rounded-lg border border-outline bg-surface text-on-surface text-sm placeholder:text-on-surface-muted focus:outline-none focus:ring-2 focus:ring-primary transition-shadow"
+                            />
+                            {errors.password && (
+                                <p className="text-xs text-red-400 mt-1">
+                                    {errors.password.message}
+                                </p>
+                            )}
+                        </div>
+
+                        <button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-hover disabled:opacity-50 transition-colors active:scale-[0.98]"
+                        >
+                            {isSubmitting && (
+                                <Loader2 size={16} className="animate-spin" />
+                            )}
+                            {isSubmitting ? "Signing in..." : "Sign in"}
+                        </button>
+                    </form>
+
+                    <p className="text-sm text-center text-on-surface-muted">
+                        Don't have an account?{" "}
+                        <Link
+                            to="/register"
+                            className="text-primary hover:underline"
+                        >
+                            Register
+                        </Link>
+                    </p>
+                </div>
+            </div>
         </div>
     );
 }

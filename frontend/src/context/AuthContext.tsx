@@ -6,7 +6,12 @@ import {
     type ReactNode,
 } from "react";
 import * as authApi from "../api/auth";
-import { setOnRefreshed, getRefreshToken } from "../api/axios";
+import {
+    setOnRefreshed,
+    getRefreshToken,
+    setRefreshToken,
+    setAccessToken,
+} from "../api/axios";
 import type { UserResponse } from "../types/user";
 
 type AuthState = {
@@ -65,6 +70,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
     }, []);
 
+    useEffect(() => {
+        const rt = getRefreshToken();
+        if (!rt) return;
+        authApi
+            .refresh(rt)
+            .then((res) => {
+                setAccessToken(res.accessToken);
+                setRefreshToken(res.refreshToken);
+                dispatch({
+                    type: "LOGIN",
+                    payload: {
+                        user: {
+                            id: "",
+                            username: res.username,
+                            roles: res.roles,
+                        },
+                        accessToken: res.accessToken,
+                    },
+                });
+            })
+            .catch(() => {
+                setRefreshToken(null);
+            });
+    }, []);
+
     const login = useCallback(async (username: string, password: string) => {
         const res = await authApi.login({ username, password });
         dispatch({
@@ -95,6 +125,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             } catch {
                 /* ignore */
             }
+        setRefreshToken(null);
+        setAccessToken(null);
         dispatch({ type: "LOGOUT" });
     }, []);
 

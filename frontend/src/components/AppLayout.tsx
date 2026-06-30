@@ -1,112 +1,182 @@
 import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import {
+  LayoutDashboard,
+  FilePlus2,
+  Settings,
+  Moon,
+  Sun,
+  LogOut,
+  Menu,
+  X,
+  PanelLeftClose,
+  PanelLeftOpen,
+  UserCircle,
+} from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
+import { useTheme } from "../hooks/useTheme";
 
 const navItems = [
-    { to: "/", label: "Dashboard", icon: "●" },
-    { to: "/journals/new", label: "New Journal", icon: "✏️" },
-    { to: "/account", label: "Account", icon: "👤" },
+  { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
+  { to: "/journals/new", label: "New Journal", icon: FilePlus2, end: false },
 ];
 
+const accountItem = { to: "/account", label: "Settings", icon: Settings, end: false };
+
 export default function AppLayout() {
-    const { user, logout } = useAuth();
-    const navigate = useNavigate();
-    const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [dark, setDark] = useState(false);
+  const { user, logout } = useAuth();
+  const { isDark, toggle } = useTheme();
+  const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("sidebar-collapsed") === "true";
+  });
 
-    const toggleDark = () => {
-        setDark((prev) => {
-            document.documentElement.classList.toggle("dark", !prev);
-            return !prev;
-        });
-    };
+  const toggleCollapsed = () => {
+    setCollapsed((prev) => {
+      localStorage.setItem("sidebar-collapsed", String(!prev));
+      return !prev;
+    });
+  };
 
-    const handleLogout = async () => {
-        await logout();
-        navigate("/login");
-    };
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login");
+  };
 
-    const sidebar = (
-        <aside className="fixed inset-y-0 left-0 z-40 w-64 bg-surface border-r border-outline flex flex-col">
-            {/* Header */}
-            <div className="p-5 border-b border-outline">
-                <h1 className="text-lg font-bold text-on-surface">
-                    JournalApp
-                </h1>
-            </div>
+  const linkClass = ({ isActive }: { isActive: boolean }) =>
+    `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
+      isActive
+        ? "bg-primary/10 text-primary font-medium shadow-[inset_2px_0_0_0] shadow-primary"
+        : "text-on-surface-muted hover:bg-hover hover:text-on-surface"
+    } ${collapsed ? "justify-center px-2" : ""}`;
 
-            {/* Nav */}
-            <nav className="flex-1 p-3 space-y-1">
-                {navItems.map((item) => (
-                    <NavLink
-                        key={item.to}
-                        to={item.to}
-                        end={item.to === "/"}
-                        onClick={() => setSidebarOpen(false)}
-                        className={({ isActive }) =>
-                            `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                                isActive
-                                    ? "bg-primary text-white"
-                                    : "text-on-surface hover:bg-surface-alt"
-                            }`
-                        }
-                    >
-                        <span>{item.icon}</span>
-                        {item.label}
-                    </NavLink>
-                ))}
-            </nav>
+  const sidebarContent = (
+    <aside
+      className={`fixed inset-y-0 left-0 z-40 flex flex-col border-r border-outline bg-surface-alt transition-all duration-300 ${
+        collapsed ? "w-16" : "w-64"
+      }`}
+    >
+      {/* Workspace header */}
+      <div className={`flex items-center border-b border-outline p-3 ${collapsed ? "justify-center" : ""}`}>
+        {!collapsed && (
+          <span className="text-sm font-semibold text-on-surface truncate">JournalApp</span>
+        )}
+        <button
+          onClick={toggleCollapsed}
+          className={`p-1.5 rounded-md text-on-surface-muted hover:bg-hover hover:text-on-surface transition-colors ${
+            collapsed ? "" : "ml-auto"
+          }`}
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+        </button>
+      </div>
 
-            {/* Bottom */}
-            <div className="border-t border-outline p-3 space-y-2">
-                <button
-                    onClick={toggleDark}
-                    className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-on-surface hover:bg-surface-alt transition-colors"
-                >
-                    <span>{dark ? "☀️" : "🌑"}</span>
-                    {dark ? "Light mode" : "Dark mode"}
-                </button>
-                <div className="px-3 py-2 text-sm text-on-surface truncate">
-                    👤 {user?.username}
-                </div>
-                <button
-                    onClick={handleLogout}
-                    className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-on-surface hover:bg-surface-alt transition-colors"
-                >
-                    🚪 Logout
-                </button>
-            </div>
-        </aside>
-    );
+      {/* Primary nav */}
+      <nav className="flex-1 p-2 space-y-1">
+        {navItems.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.end}
+            onClick={() => setSidebarOpen(false)}
+            className={linkClass}
+            title={collapsed ? item.label : undefined}
+          >
+            <item.icon size={18} />
+            {!collapsed && <span>{item.label}</span>}
+          </NavLink>
+        ))}
 
-    return (
-        <div className="min-h-screen bg-surface-alt text-on-surface">
-            {/* Mobile hamburger */}
-            <button
-                className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded bg-surface border border-outline"
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-            >
-                <span className="text-xl">{sidebarOpen ? "✕" : "☰"}</span>
-            </button>
+        {!collapsed && <div className="pt-3 pb-1 text-xs font-medium text-on-surface-muted px-3">Account</div>}
 
-            {/* Desktop sidebar */}
-            <div className="hidden lg:block">{sidebar}</div>
+        <NavLink
+          to={accountItem.to}
+          end={accountItem.end}
+          onClick={() => setSidebarOpen(false)}
+          className={linkClass}
+          title={collapsed ? accountItem.label : undefined}
+        >
+          <accountItem.icon size={18} />
+          {!collapsed && <span>{accountItem.label}</span>}
+        </NavLink>
+      </nav>
 
-            {/* Mobile sidebar overlay */}
-            {sidebarOpen && (
-                <>
-                    <div
-                        className="fixed inset-0 bg-black/50 z-30 lg:hidden"
-                        onClick={() => setSidebarOpen(false)}
-                    />
-                    <div className="lg:hidden">{sidebar}</div>
-                </>
-            )}
+      {/* Bottom */}
+      <div className="border-t border-outline p-2 space-y-1">
+        <button
+          onClick={toggle}
+          className={`flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm text-on-surface-muted hover:bg-hover hover:text-on-surface transition-colors ${
+            collapsed ? "justify-center px-2" : ""
+          }`}
+          title={collapsed ? (isDark ? "Light mode" : "Dark mode") : undefined}
+        >
+          {isDark ? <Sun size={18} /> : <Moon size={18} />}
+          {!collapsed && <span>{isDark ? "Light mode" : "Dark mode"}</span>}
+        </button>
 
-            {/* Main */}
-            <main className="lg:ml-64 p-6 pt-16 lg:pt-6">
-                <Outlet />
-            </main>
-        </div>
-    );
+        {!collapsed && (
+          <div className="flex items-center gap-2 px-3 py-2 text-sm text-on-surface-muted truncate">
+            <UserCircle size={16} />
+            <span className="truncate">{user?.username}</span>
+          </div>
+        )}
+
+        <button
+          onClick={handleLogout}
+          className={`flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm text-on-surface-muted hover:bg-hover hover:text-red-400 transition-colors ${
+            collapsed ? "justify-center px-2" : ""
+          }`}
+          title={collapsed ? "Logout" : undefined}
+        >
+          <LogOut size={18} />
+          {!collapsed && <span>Logout</span>}
+        </button>
+      </div>
+    </aside>
+  );
+
+  return (
+    <div className="min-h-screen bg-surface">
+      {/* Mobile hamburger */}
+      <button
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-surface-alt border border-outline text-on-surface shadow-sm"
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        aria-label="Toggle sidebar"
+      >
+        {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+      </button>
+
+      {/* Desktop sidebar */}
+      <div className="hidden lg:block">{sidebarContent}</div>
+
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-30 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+          <div
+            className={`lg:hidden fixed inset-y-0 left-0 z-40 transition-transform duration-300 ease-out ${
+              sidebarOpen ? "translate-x-0" : "-translate-x-full"
+            }`}
+          >
+            {sidebarContent}
+          </div>
+        </>
+      )}
+
+      {/* Main */}
+      <main
+        className={`transition-all duration-300 p-6 pt-16 lg:pt-6 ${
+          collapsed ? "lg:ml-16" : "lg:ml-64"
+        } animate-fadeIn`}
+      >
+        <Outlet />
+      </main>
+    </div>
+  );
 }
