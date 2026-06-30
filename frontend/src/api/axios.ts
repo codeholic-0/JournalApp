@@ -19,7 +19,7 @@ export const setOnRefreshed = (cb: ((token: string | null) => void) | null) => {
     onRefreshed = cb;
 };
 
-const api = axios.create({ baseURL: "" });
+const api = axios.create({ baseURL: import.meta.env.VITE_API_URL || "" });
 
 api.interceptors.request.use((cfg) => {
     if (accessToken) {
@@ -41,7 +41,8 @@ api.interceptors.response.use(
             return Promise.reject(error);
         }
         try {
-            const { data } = await axios.post("/api/auth/refresh", {
+            const base = import.meta.env.VITE_API_URL || "";
+            const { data } = await axios.post(base + "/api/auth/refresh", {
                 refreshToken: getRefreshToken(),
             });
             setRefreshToken(data.refreshToken);
