@@ -79,3 +79,23 @@ export const purgeNote = async (
 ): Promise<void> => {
     await api.delete(`/api/users/${username}/notes/${id}/purge`);
 };
+
+export const toggleFavorite = async (
+    username: string,
+    id: string,
+): Promise<NoteResponse> => {
+    const { data } = await api.post<NoteResponse>(
+        `/api/users/${username}/notes/${id}/favorite`,
+    );
+    return data;
+};
+
+export const togglePin = async (
+    username: string,
+    id: string,
+): Promise<NoteResponse> => {
+    const { data } = await api.post<NoteResponse>(
+        `/api/users/${username}/notes/${id}/pin`,
+    );
+    return data;
+};

@@ -17,26 +17,19 @@ import com.dev.Notes.enumeration.NoteType;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Note {
-
     @Id
     private String id;
-
     @NonNull
     private String title;
-
     private String content;
-
     @CreatedDate
     private LocalDateTime createdAt;
-
     @LastModifiedDate
     private LocalDateTime updatedAt;
-
     private String username;
-
     private Map<String, Object> contentJson;
-
     private NoteType noteType = NoteType.BASIC;
-
     private LocalDateTime deletedAt;
+    private boolean favorite = false;
+    private boolean pinned = false;
 }

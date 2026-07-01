@@ -57,6 +57,8 @@ public class NoteService {
         res.setTitle(note.getTitle());
         res.setContent(note.getContent());
         res.setNoteType(note.getNoteType());
+        res.setFavorite(note.isFavorite());
+        res.setPinned(note.isPinned());
         res.setContentJson(note.getContentJson());
         res.setUsername(note.getUsername());
         res.setCreatedAt(note.getCreatedAt());
@@ -229,6 +231,44 @@ public class NoteService {
             evictNoteCache(noteId);
             evictNotesCache(username);
             log.info("note {} permanently deleted for user: {}", note.getId(), username);
+        } else {
+            log.warn("Ownership mismatch! user: {} tried to access note: {}", username, note.getId());
+            throw new NoteOwnershipMismatchException(username);
+        }
+    }
+
+    public NoteResponse toggleFavorite(String username, String noteId) {
+        var note = noteRepository
+                .findById(noteId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Note not found with id: " + noteId));
+        if (note.getUsername().equals(username)) {
+            note.setFavorite(!note.isFavorite());
+            noteRepository.save(note);
+            evictNoteCache(noteId);
+            evictNotesCache(username);
+            log.info("note {} {} favourite for user: {}", note.getId(), note.isFavorite() ? "marked" : "unmarked",
+                    username);
+            return toNoteResponse(note);
+        } else {
+            log.warn("Ownership mismatch! user: {} tried to access note: {}", username, note.getId());
+            throw new NoteOwnershipMismatchException(username);
+        }
+    }
+
+    public NoteResponse togglePinned(String username, String noteId) {
+        var note = noteRepository
+                .findById(noteId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Note not found with id: " + noteId));
+        if (note.getUsername().equals(username)) {
+            note.setPinned(!note.isPinned());
+            noteRepository.save(note);
+            evictNoteCache(noteId);
+            evictNotesCache(username);
+            log.info("note {} marked {}  for user: {}", note.getId(), note.isPinned() ? "pinned" : "unpinned",
+                    username);
+            return toNoteResponse(note);
         } else {
             log.warn("Ownership mismatch! user: {} tried to access note: {}", username, note.getId());
             throw new NoteOwnershipMismatchException(username);

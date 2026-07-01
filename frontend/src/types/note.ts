@@ -3,6 +3,8 @@ export interface NoteResponse {
     title: string;
     content: string;
     noteType?: NoteType;
+    favorite?: boolean;
+    pinned?: boolean;
     contentJson?: Record<string, unknown> | null;
     createdAt: string;
     updatedAt: string;
@@ -12,6 +14,8 @@ export interface NoteRequest {
     title: string;
     content?: string;
     noteType?: NoteType;
+    favorite?: boolean;
+    pinned?: boolean;
     contentJson?: Record<string, unknown> | null;
 }
 

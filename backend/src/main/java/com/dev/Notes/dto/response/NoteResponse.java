@@ -15,7 +15,6 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class NoteResponse {
-
     private String id;
     private String title;
     private String content;
@@ -25,4 +24,6 @@ public class NoteResponse {
     private Map<String, Object> contentJson;
     private NoteType noteType;
     private LocalDateTime deletedAt;
+    private boolean favorite = false;
+    private boolean pinned = false;
 }

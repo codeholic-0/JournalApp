@@ -127,4 +127,28 @@ public class NoteController {
         noteService.purgeNote(username, noteId);
         return ResponseEntity.noContent().build();
     }
+
+    @Operation(summary = "Toggle favorite", description = "Toggle the favorite flag on a note")
+    @ApiResponse(responseCode = "200", description = "Favorite toggled")
+    @ApiResponse(responseCode = "404", description = "Note not found")
+    @ApiResponse(responseCode = "403", description = "Note does not belong to the user")
+    @PostMapping("/{noteId}/favorite")
+    public ResponseEntity<NoteResponse> toggleFavorite(
+            @PathVariable String username,
+            @PathVariable String noteId) {
+        var res = noteService.toggleFavorite(username, noteId);
+        return ResponseEntity.ok(res);
+    }
+
+    @Operation(summary = "Toggle pin", description = "Toggle the pinned flag on a note")
+    @ApiResponse(responseCode = "200", description = "Pin toggled")
+    @ApiResponse(responseCode = "404", description = "Note not found")
+    @ApiResponse(responseCode = "403", description = "Note does not belong to the user")
+    @PostMapping("/{noteId}/pin")
+    public ResponseEntity<NoteResponse> togglePinned(
+            @PathVariable String username,
+            @PathVariable String noteId) {
+        var res = noteService.togglePinned(username, noteId);
+        return ResponseEntity.ok(res);
+    }
 }

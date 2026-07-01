@@ -9,16 +9,23 @@ import {
     Trash2,
     ChevronLeft,
     ChevronRight,
+    Star,
+    Pin,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../hooks/useAuth";
-import { useNotes, useDeleteNote } from "../hooks/useNotes";
 import { SkeletonCard } from "../components/Skeleton";
 import ConfirmDialog from "../components/ConfirmDialog";
 import NoteTypeBadge from "../components/NoteTypeBadge";
-
+import {
+    useNotes,
+    useDeleteNote,
+    useToggleFavorite,
+    useTogglePin,
+} from "../hooks/useNotes";
 export default function Dashboard() {
     const { user } = useAuth();
+    const username = user?.username ?? "";
     const [page, setPage] = useState(0);
     const { data, isLoading, isError } = useNotes(user?.username ?? "", page);
     const deleteNote = useDeleteNote();
@@ -26,8 +33,13 @@ export default function Dashboard() {
         id: string;
         title: string;
     } | null>(null);
-
+    const [showFavorites, setShowFavorites] = useState(false);
+    const toggleFav = useToggleFavorite();
+    const togglePin = useTogglePin();
     const notes = data?.content ?? [];
+    const displayNotes = showFavorites
+        ? notes.filter((n) => n.favorite)
+        : notes;
     const totalPages = data?.page?.totalPages ?? 0;
 
     const handleDelete = async () => {
@@ -76,6 +88,22 @@ export default function Dashboard() {
                     New Note
                 </Link>
             </div>
+            <button
+                onClick={() => setShowFavorites((p) => !p)}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors border ${
+                    showFavorites
+                        ? "bg-amber-50 border-amber-300 text-amber-700"
+                        : "border-outline text-on-surface-muted hover:text-on-surface hover:bg-hover"
+                }`}
+            >
+                <Star
+                    size={14}
+                    className={
+                        showFavorites ? "fill-amber-400 text-amber-400" : ""
+                    }
+                />
+                {showFavorites ? "All Notes" : "Favorites"}
+            </button>
 
             {notes.length === 0 && page === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 space-y-4">
@@ -94,7 +122,7 @@ export default function Dashboard() {
             ) : (
                 <>
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {notes.map((j) => (
+                        {displayNotes.map((j) => (
                             <div
                                 key={j.id}
                                 className="group bg-surface-alt rounded-xl border border-outline p-4 space-y-3 hover:scale-[1.02] hover:shadow-md transition-all duration-200"
@@ -110,6 +138,43 @@ export default function Dashboard() {
                                         </h2>
                                     </div>
                                     <NoteTypeBadge type={j.noteType} />
+                                </div>
+
+                                <div className="flex items-center gap-1 shrink-0">
+                                    <button
+                                        onClick={() =>
+                                            toggleFav.mutate({
+                                                username,
+                                                id: j.id,
+                                            })
+                                        }
+                                    >
+                                        {j.favorite ? (
+                                            <Star
+                                                size={16}
+                                                className="text-amber-400 fill-amber-400"
+                                            />
+                                        ) : (
+                                            <Star size={16} />
+                                        )}
+                                    </button>
+                                    <button
+                                        onClick={() =>
+                                            togglePin.mutate({
+                                                username,
+                                                id: j.id,
+                                            })
+                                        }
+                                    >
+                                        {j.pinned ? (
+                                            <Pin
+                                                size={16}
+                                                className="text-primary fill-primary"
+                                            />
+                                        ) : (
+                                            <Pin size={16} />
+                                        )}
+                                    </button>
                                 </div>
 
                                 {j.content && (
