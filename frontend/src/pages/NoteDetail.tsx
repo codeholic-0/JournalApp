@@ -7,12 +7,19 @@ import {
     Clock,
     Pencil,
     Trash2,
+    Star,
+    Pin,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { useAuth } from "../hooks/useAuth";
-import { useNote, useDeleteNote } from "../hooks/useNotes";
+import {
+    useNote,
+    useDeleteNote,
+    useToggleFavorite,
+    useTogglePin,
+} from "../hooks/useNotes";
 import { Skeleton, SkeletonText } from "../components/Skeleton";
 import ConfirmDialog from "../components/ConfirmDialog";
 import NoteTypeBadge from "../components/NoteTypeBadge";
@@ -24,6 +31,8 @@ export default function NoteDetail() {
     const username = user?.username ?? "";
     const { data: note, isLoading, isError } = useNote(username, id ?? "");
     const deleteNote = useDeleteNote();
+    const toggleFav = useToggleFavorite();
+    const togglePin = useTogglePin();
     const [deleteTarget, setDeleteTarget] = useState<{
         id: string;
         title: string;
@@ -90,6 +99,36 @@ export default function NoteDetail() {
                     <NoteTypeBadge type={note.noteType} />
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
+                    <button
+                        onClick={() =>
+                            toggleFav.mutate({ username, id: note.id })
+                        }
+                        className="cursor-pointer"
+                    >
+                        {note.favorite ? (
+                            <Star
+                                size={18}
+                                className="text-amber-400 fill-amber-400"
+                            />
+                        ) : (
+                            <Star size={18} />
+                        )}
+                    </button>
+                    <button
+                        onClick={() =>
+                            togglePin.mutate({ username, id: note.id })
+                        }
+                        className="cursor-pointer"
+                    >
+                        {note.pinned ? (
+                            <Pin
+                                size={18}
+                                className="text-primary fill-primary"
+                            />
+                        ) : (
+                            <Pin size={18} />
+                        )}
+                    </button>
                     <Link
                         to={`/notes/${note.id}/edit`}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-outline text-sm text-on-surface-muted hover:text-on-surface hover:bg-hover transition-colors"

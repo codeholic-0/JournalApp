@@ -105,20 +105,29 @@ export default function Dashboard() {
                 {showFavorites ? "All Notes" : "Favorites"}
             </button>
 
-            {notes.length === 0 && page === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 space-y-4">
-                    <FileText size={48} className="text-on-surface-muted" />
-                    <p className="text-on-surface-muted text-sm">
-                        No note entries yet.
-                    </p>
-                    <Link
-                        to="/notes/new"
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-hover transition-colors"
-                    >
-                        <FilePlus2 size={16} />
-                        Create your first one
-                    </Link>
-                </div>
+            {displayNotes.length === 0 && page === 0 ? (
+                showFavorites && notes.length > 0 ? (
+                    <div className="flex flex-col items-center justify-center py-20 space-y-4">
+                        <Star size={48} className="text-on-surface-muted" />
+                        <p className="text-on-surface-muted text-sm">
+                            No favorited notes yet.
+                        </p>
+                    </div>
+                ) : (
+                    <div className="flex flex-col items-center justify-center py-20 space-y-4">
+                        <FileText size={48} className="text-on-surface-muted" />
+                        <p className="text-on-surface-muted text-sm">
+                            No note entries yet.
+                        </p>
+                        <Link
+                            to="/notes/new"
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-hover transition-colors"
+                        >
+                            <FilePlus2 size={16} />
+                            Create your first one
+                        </Link>
+                    </div>
+                )
             ) : (
                 <>
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

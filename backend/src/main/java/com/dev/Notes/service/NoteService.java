@@ -266,7 +266,7 @@ public class NoteService {
             noteRepository.save(note);
             evictNoteCache(noteId);
             evictNotesCache(username);
-            log.info("note {} marked {}  for user: {}", note.getId(), note.isPinned() ? "pinned" : "unpinned",
+            log.info("note {} {}  for user: {}", note.getId(), note.isPinned() ? "pinned" : "unpinned",
                     username);
             return toNoteResponse(note);
         } else {
