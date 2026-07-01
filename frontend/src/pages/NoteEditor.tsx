@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,6 +22,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import { useAuth } from "../hooks/useAuth";
 import { useNote, useCreateNote, useUpdateNote } from "../hooks/useNotes";
+import type { NoteDraft } from "../types/note";
 
 const schema = z.object({
     title: z.string().min(1, "Title is required"),
@@ -59,10 +60,23 @@ export default function NoteEditor() {
     const { user } = useAuth();
     const navigate = useNavigate();
     const username = user?.username ?? "";
+    const draftKey = `note-draft:${id || "new"}`;
 
     const { data: existing } = useNote(username, id ?? "");
     const createNote = useCreateNote();
     const updateNote = useUpdateNote();
+
+    const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saved">(
+        "idle",
+    );
+
+    const {
+        register,
+        handleSubmit,
+        reset,
+        getValues,
+        formState: { errors, isSubmitting },
+    } = useForm<NoteForm>({ resolver: zodResolver(schema) });
 
     const editor = useEditor({
         extensions: [
@@ -74,6 +88,22 @@ export default function NoteEditor() {
                 ? existing.contentJson
                 : { type: "doc", content: [{ type: "paragraph" }] },
     });
+
+    // Restore draft on mount (only for new notes)
+    useEffect(() => {
+        const raw = localStorage.getItem(draftKey);
+        if (!raw) return;
+        try {
+            const draft: NoteDraft = JSON.parse(raw);
+            if (!isEdit || !existing) {
+                reset({ title: draft.title });
+                editor?.commands.setContent(draft.contentJson);
+            }
+        } catch {
+            /* ignore corrupt draft */
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     useEffect(() => {
         if (isEdit && existing?.contentJson && editor) {
@@ -89,12 +119,27 @@ export default function NoteEditor() {
         return () => editor?.destroy();
     }, [editor]);
 
-    const {
-        register,
-        handleSubmit,
-        reset,
-        formState: { errors, isSubmitting },
-    } = useForm<NoteForm>({ resolver: zodResolver(schema) });
+    // Debounced auto-save to localStorage
+    useEffect(() => {
+        if (!editor) return;
+        const timer = setTimeout(() => {
+            const json = editor.getJSON();
+            const markdown = editor.state.doc
+                ? defaultMarkdownSerializer.serialize(editor.state.doc)
+                : "";
+            const draft: NoteDraft = {
+                title: getValues("title"),
+                contentJson: json,
+                markdown,
+                savedAt: Date.now(),
+            };
+            localStorage.setItem(draftKey, JSON.stringify(draft));
+            setAutoSaveStatus("saved");
+            setTimeout(() => setAutoSaveStatus("idle"), 4000);
+        }, 1000);
+        return () => clearTimeout(timer);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [editor, getValues("title")]);
 
     useEffect(() => {
         if (existing) reset({ title: existing.title });
@@ -103,7 +148,7 @@ export default function NoteEditor() {
     const onSubmit = async (data: NoteForm) => {
         if (!editor) return;
         try {
-            const markdown = editor?.state.doc
+            const markdown = editor.state.doc
                 ? defaultMarkdownSerializer.serialize(editor.state.doc)
                 : "";
             const payload = {
@@ -118,6 +163,7 @@ export default function NoteEditor() {
                 await createNote.mutateAsync({ username, data: payload });
                 toast.success("Note created");
             }
+            localStorage.removeItem(draftKey);
             navigate("/");
         } catch {
             toast.error("Failed to save note");
@@ -236,28 +282,33 @@ export default function NoteEditor() {
                     <EditorContent editor={editor} />
                 </div>
 
-                <div className="flex gap-3 pt-2">
-                    <button
-                        type="submit"
-                        disabled={isSubmitting}
-                        className="flex items-center gap-2 px-5 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-hover disabled:opacity-50 transition-colors active:scale-[0.98]"
-                    >
-                        {isSubmitting && (
-                            <Loader2 size={14} className="animate-spin" />
-                        )}
-                        {isSubmitting
-                            ? "Saving..."
-                            : isEdit
-                              ? "Update"
-                              : "Create"}
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => navigate(-1)}
-                        className="px-5 py-2 rounded-lg border border-outline text-sm text-on-surface-muted hover:bg-hover transition-colors"
-                    >
-                        Cancel
-                    </button>
+                <div className="flex items-center gap-3 pt-2">
+                    <div className="flex gap-3">
+                        <button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="flex items-center gap-2 px-5 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-hover disabled:opacity-50 transition-colors active:scale-[0.98]"
+                        >
+                            {isSubmitting && (
+                                <Loader2 size={14} className="animate-spin" />
+                            )}
+                            {isSubmitting
+                                ? "Saving..."
+                                : isEdit
+                                  ? "Update"
+                                  : "Create"}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => navigate(-1)}
+                            className="px-5 py-2 rounded-lg border border-outline text-sm text-on-surface-muted hover:bg-hover transition-colors"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                    {autoSaveStatus !== "idle" && (
+                        <span className="text-xs text-green-500">Saved ✓</span>
+                    )}
                 </div>
             </form>
         </div>

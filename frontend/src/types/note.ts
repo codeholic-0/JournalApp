@@ -24,3 +24,10 @@ export interface PagedResponse<T> {
     content: T[];
     page: PageMetadata;
 }
+
+export interface NoteDraft {
+    title: string;
+    contentJson: Record<string, unknown>;
+    markdown: string;
+    savedAt: number;
+}
