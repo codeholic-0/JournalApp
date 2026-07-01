@@ -12,10 +12,12 @@ import JournalDetail from "./pages/JournalDetail";
 import Account from "./pages/Account";
 import NotFound from "./pages/NotFound";
 import ErrorBoundary from "./components/ErrorBoundary";
+import { useTheme } from "./hooks/useTheme";
 
 const queryClient = new QueryClient();
 
 export default function App() {
+    useTheme();
     return (
         <ErrorBoundary>
             <QueryClientProvider client={queryClient}>

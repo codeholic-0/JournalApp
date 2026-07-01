@@ -132,21 +132,23 @@ export default function Dashboard() {
                                     </span>
                                 </div>
 
-                                <div className="flex gap-3 pt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                                    <Link
-                                        to={`/journals/${j.id}`}
-                                        className="flex items-center gap-1 text-xs text-on-surface-muted hover:text-primary transition-colors"
-                                    >
-                                        <Eye size={14} />
-                                        View
-                                    </Link>
-                                    <Link
-                                        to={`/journals/${j.id}/edit`}
-                                        className="flex items-center gap-1 text-xs text-on-surface-muted hover:text-primary transition-colors"
-                                    >
-                                        <Pencil size={14} />
-                                        Edit
-                                    </Link>
+                                <div className="flex items-center justify-between pt-1">
+                                    <div className="flex gap-3">
+                                        <Link
+                                            to={`/journals/${j.id}`}
+                                            className="flex items-center gap-1 text-xs text-on-surface-muted hover:text-primary transition-colors"
+                                        >
+                                            <Eye size={14} />
+                                            View
+                                        </Link>
+                                        <Link
+                                            to={`/journals/${j.id}/edit`}
+                                            className="flex items-center gap-1 text-xs text-on-surface-muted hover:text-primary transition-colors"
+                                        >
+                                            <Pencil size={14} />
+                                            Edit
+                                        </Link>
+                                    </div>
                                     <button
                                         onClick={() =>
                                             setDeleteTarget({
@@ -154,7 +156,7 @@ export default function Dashboard() {
                                                 title: j.title,
                                             })
                                         }
-                                        className="flex items-center gap-1 text-xs text-on-surface-muted hover:text-red-400 transition-colors"
+                                        className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 font-medium transition-colors"
                                     >
                                         <Trash2 size={14} />
                                         Delete
