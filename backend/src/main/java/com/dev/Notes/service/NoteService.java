@@ -4,7 +4,8 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
 import java.util.Set;
-
+import java.util.List;
+import java.util.Map;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -41,6 +42,9 @@ public class NoteService {
         Note entry = new Note();
         entry.setTitle(req.getTitle());
         entry.setContent(req.getContent());
+        if (req.getContentJson() != null) {
+            entry.setContentJson(req.getContentJson());
+        }
         return entry;
     }
 
@@ -49,6 +53,7 @@ public class NoteService {
         res.setId(entry.getId());
         res.setTitle(entry.getTitle());
         res.setContent(entry.getContent());
+        res.setContentJson(entry.getContentJson());
         res.setUsername(entry.getUsername());
         res.setCreatedAt(entry.getCreatedAt());
         res.setUpdatedAt(entry.getUpdatedAt());
@@ -63,11 +68,15 @@ public class NoteService {
                         "User with username: " + username + " not found"));
         var entry = toNoteEntry(req);
         entry.setUsername(username);
-        var res = noteRepository.save(entry);
+        noteRepository.save(entry);
         user.getNoteIds().add(entry.getId());
         userRepository.save(user);
         evictNotesCache(username);
         log.info("Note created: {} for user: {}", req.getTitle(), username);
+        if (entry.getContentJson() == null) {
+            entry.setContentJson(Map.of("type", "doc", "content", List.of(Map.of("type", "paragraph"))));
+        }
+        var res = noteRepository.save(entry);
         return toNoteResponse(res);
     }
 
@@ -124,6 +133,8 @@ public class NoteService {
                 entry.setTitle(updates.getTitle());
             if (updates.getContent() != null)
                 entry.setContent(updates.getContent());
+            if (updates.getContentJson() != null)
+                entry.setContentJson(updates.getContentJson());
             noteRepository.save(entry);
             evictNoteCache(noteId);
             log.info("Note: {} updated", entry.getId());

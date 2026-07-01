@@ -1,6 +1,8 @@
 package com.dev.Notes.models;
 
 import java.time.LocalDateTime;
+import java.util.Map;
+
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -29,4 +31,6 @@ public class Note {
     private LocalDateTime updatedAt;
 
     private String username;
+
+    private Map<String, Object> contentJson;
 }

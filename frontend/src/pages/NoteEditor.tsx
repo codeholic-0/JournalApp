@@ -40,11 +40,28 @@ export default function NoteEditor() {
 
     const onSubmit = async (data: NoteForm) => {
         try {
+            const payload = {
+                title: data.title,
+                content: data.content || "",
+                contentJson: data.content
+                    ? {
+                          type: "doc",
+                          content: [
+                              {
+                                  type: "paragraph",
+                                  content: [
+                                      { type: "text", text: data.content },
+                                  ],
+                              },
+                          ],
+                      }
+                    : null,
+            };
             if (isEdit && id) {
-                await updateNote.mutateAsync({ username, id, data });
+                await updateNote.mutateAsync({ username, id, data: payload });
                 toast.success("Note updated");
             } else {
-                await createNote.mutateAsync({ username, data });
+                await createNote.mutateAsync({ username, data: payload });
                 toast.success("Note created");
             }
             navigate("/");

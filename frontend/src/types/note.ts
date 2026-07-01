@@ -2,6 +2,7 @@ export interface NoteResponse {
     id: string;
     title: string;
     content: string;
+    contentJson?: Record<string, unknown> | null;
     createdAt: string;
     updatedAt: string;
 }
@@ -9,6 +10,7 @@ export interface NoteResponse {
 export interface NoteRequest {
     title: string;
     content?: string;
+    contentJson?: Record<string, unknown> | null;
 }
 
 export interface PageMetadata {

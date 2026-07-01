@@ -1,6 +1,8 @@
 package com.dev.Notes.dto.response;
 
 import java.time.LocalDateTime;
+import java.util.Map;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -18,4 +20,5 @@ public class NoteResponse {
     private String username;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Map<String, Object> contentJson;
 }
