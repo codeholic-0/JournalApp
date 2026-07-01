@@ -3,17 +3,54 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowLeft, FileText, Loader2 } from "lucide-react";
+import {
+    ArrowLeft,
+    Bold,
+    FileText,
+    Heading1,
+    Heading2,
+    Heading3,
+    Italic,
+    List,
+    ListOrdered,
+    Loader2,
+} from "lucide-react";
 import { toast } from "sonner";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Placeholder from "@tiptap/extension-placeholder";
 import { useAuth } from "../hooks/useAuth";
 import { useNote, useCreateNote, useUpdateNote } from "../hooks/useNotes";
 
 const schema = z.object({
     title: z.string().min(1, "Title is required"),
-    content: z.string().optional(),
 });
 
 type NoteForm = z.infer<typeof schema>;
+
+function ToolbarButton({
+    onClick,
+    active,
+    children,
+}: {
+    onClick: () => void;
+    active: boolean;
+    children: React.ReactNode;
+}) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className={`p-1.5 rounded transition-colors ${
+                active
+                    ? "bg-primary text-white"
+                    : "text-on-surface-muted hover:bg-hover hover:text-on-surface"
+            }`}
+        >
+            {children}
+        </button>
+    );
+}
 
 export default function NoteEditor() {
     const { id } = useParams();
@@ -26,6 +63,31 @@ export default function NoteEditor() {
     const createNote = useCreateNote();
     const updateNote = useUpdateNote();
 
+    const editor = useEditor({
+        extensions: [
+            StarterKit,
+            Placeholder.configure({ placeholder: "Write your note..." }),
+        ],
+        content:
+            isEdit && existing?.contentJson
+                ? existing.contentJson
+                : { type: "doc", content: [{ type: "paragraph" }] },
+    });
+
+    useEffect(() => {
+        if (isEdit && existing?.contentJson && editor) {
+            const currentJson = editor.getJSON();
+            const existingJson = existing.contentJson;
+            if (JSON.stringify(currentJson) !== JSON.stringify(existingJson)) {
+                editor.commands.setContent(existingJson);
+            }
+        }
+    }, [existing, editor, isEdit]);
+
+    useEffect(() => {
+        return () => editor?.destroy();
+    }, [editor]);
+
     const {
         register,
         handleSubmit,
@@ -34,28 +96,16 @@ export default function NoteEditor() {
     } = useForm<NoteForm>({ resolver: zodResolver(schema) });
 
     useEffect(() => {
-        if (existing)
-            reset({ title: existing.title, content: existing.content });
+        if (existing) reset({ title: existing.title });
     }, [existing, reset]);
 
     const onSubmit = async (data: NoteForm) => {
+        if (!editor) return;
         try {
             const payload = {
                 title: data.title,
-                content: data.content || "",
-                contentJson: data.content
-                    ? {
-                          type: "doc",
-                          content: [
-                              {
-                                  type: "paragraph",
-                                  content: [
-                                      { type: "text", text: data.content },
-                                  ],
-                              },
-                          ],
-                      }
-                    : null,
+                content: data.title,
+                contentJson: editor.getJSON(),
             };
             if (isEdit && id) {
                 await updateNote.mutateAsync({ username, id, data: payload });
@@ -99,22 +149,88 @@ export default function NoteEditor() {
                     </p>
                 )}
 
-                <textarea
-                    {...register("content")}
-                    placeholder="Write your note entry..."
-                    rows={1}
-                    onInput={(e) => {
-                        const target = e.target as HTMLTextAreaElement;
-                        target.style.height = "auto";
-                        target.style.height = target.scrollHeight + "px";
-                    }}
-                    className="w-full bg-transparent text-on-surface placeholder:text-on-surface-muted border-none focus:outline-none resize-none leading-relaxed min-h-50"
-                />
-                {errors.content && (
-                    <p className="text-xs text-red-400">
-                        {errors.content.message}
-                    </p>
-                )}
+                <div className="flex items-center gap-1 px-1 py-2 border-b border-outline">
+                    <ToolbarButton
+                        onClick={() =>
+                            editor
+                                ?.chain()
+                                .focus()
+                                .toggleHeading({ level: 1 })
+                                .run()
+                        }
+                        active={
+                            editor?.isActive("heading", { level: 1 }) ?? false
+                        }
+                    >
+                        <Heading1 size={18} />
+                    </ToolbarButton>
+                    <ToolbarButton
+                        onClick={() =>
+                            editor
+                                ?.chain()
+                                .focus()
+                                .toggleHeading({ level: 2 })
+                                .run()
+                        }
+                        active={
+                            editor?.isActive("heading", { level: 2 }) ?? false
+                        }
+                    >
+                        <Heading2 size={18} />
+                    </ToolbarButton>
+                    <ToolbarButton
+                        onClick={() =>
+                            editor
+                                ?.chain()
+                                .focus()
+                                .toggleHeading({ level: 3 })
+                                .run()
+                        }
+                        active={
+                            editor?.isActive("heading", { level: 3 }) ?? false
+                        }
+                    >
+                        <Heading3 size={18} />
+                    </ToolbarButton>
+                    <span className="w-px h-5 bg-outline mx-1" />
+                    <ToolbarButton
+                        onClick={() =>
+                            editor?.chain().focus().toggleBold().run()
+                        }
+                        active={editor?.isActive("bold") ?? false}
+                    >
+                        <Bold size={18} />
+                    </ToolbarButton>
+                    <ToolbarButton
+                        onClick={() =>
+                            editor?.chain().focus().toggleItalic().run()
+                        }
+                        active={editor?.isActive("italic") ?? false}
+                    >
+                        <Italic size={18} />
+                    </ToolbarButton>
+                    <span className="w-px h-5 bg-outline mx-1" />
+                    <ToolbarButton
+                        onClick={() =>
+                            editor?.chain().focus().toggleBulletList().run()
+                        }
+                        active={editor?.isActive("bulletList") ?? false}
+                    >
+                        <List size={18} />
+                    </ToolbarButton>
+                    <ToolbarButton
+                        onClick={() =>
+                            editor?.chain().focus().toggleOrderedList().run()
+                        }
+                        active={editor?.isActive("orderedList") ?? false}
+                    >
+                        <ListOrdered size={18} />
+                    </ToolbarButton>
+                </div>
+
+                <div className="min-h-50 prose prose-sm max-w-none">
+                    <EditorContent editor={editor} />
+                </div>
 
                 <div className="flex gap-3 pt-2">
                     <button
