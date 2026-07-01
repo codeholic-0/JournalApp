@@ -84,7 +84,7 @@ public class RefreshTokenService {
     public String extractUsername(String rawToken) {
         String hash = hashToken(rawToken);
         RefreshToken token = refreshTokenRepository.findByTokenHash(hash)
-                .orElseThrow(() -> new ResourceNotFoundException("Invalid refresh token"));
+                .orElseThrow(() -> new BadCredentialsException("Invalid refresh token"));
         if (token.isRevoked()) {
             throw new BadCredentialsException("Refresh token revoked");
         }

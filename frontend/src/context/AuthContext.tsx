@@ -3,6 +3,7 @@ import {
     useReducer,
     useEffect,
     useCallback,
+    useRef,
     type ReactNode,
 } from "react";
 import * as authApi from "../api/auth";
@@ -77,7 +78,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
     }, []);
 
+    const refreshAttempted = useRef(false);
+
     useEffect(() => {
+        if (refreshAttempted.current) return;
+        refreshAttempted.current = true;
+
         const rt = getRefreshToken();
         if (!rt) {
             dispatch({ type: "LOADED" });

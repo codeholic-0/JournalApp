@@ -28,6 +28,18 @@ api.interceptors.request.use((cfg) => {
     return cfg;
 });
 
+let isRefreshing = false;
+let refreshSubscribers: Array<(token: string) => void> = [];
+
+function notifySubscribers(token: string) {
+    refreshSubscribers.forEach((cb) => cb(token));
+    refreshSubscribers = [];
+}
+
+function addRefreshSubscriber(cb: (token: string) => void) {
+    refreshSubscribers.push(cb);
+}
+
 api.interceptors.response.use(
     (res) => res,
     async (error) => {
@@ -35,11 +47,24 @@ api.interceptors.response.use(
         if (error.response?.status !== 401 || original._retry) {
             return Promise.reject(error);
         }
-        original._retry = true;
+
         if (!getRefreshToken()) {
             onRefreshed?.(null);
             return Promise.reject(error);
         }
+
+        if (isRefreshing) {
+            return new Promise<string>((resolve) => {
+                addRefreshSubscriber(resolve);
+            }).then((token) => {
+                original.headers.Authorization = `Bearer ${token}`;
+                return api(original);
+            });
+        }
+
+        original._retry = true;
+        isRefreshing = true;
+
         try {
             const base = import.meta.env.VITE_API_URL || "";
             const { data } = await axios.post(base + "/api/auth/refresh", {
@@ -48,13 +73,17 @@ api.interceptors.response.use(
             setRefreshToken(data.refreshToken);
             setAccessToken(data.accessToken);
             onRefreshed?.(data.accessToken);
+            notifySubscribers(data.accessToken);
             original.headers.Authorization = `Bearer ${data.accessToken}`;
             return api(original);
         } catch {
             setRefreshToken(null);
             setAccessToken(null);
             onRefreshed?.(null);
+            refreshSubscribers = [];
             return Promise.reject(error);
+        } finally {
+            isRefreshing = false;
         }
     },
 );
