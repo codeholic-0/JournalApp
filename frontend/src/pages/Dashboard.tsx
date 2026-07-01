@@ -15,6 +15,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useNotes, useDeleteNote } from "../hooks/useNotes";
 import { SkeletonCard } from "../components/Skeleton";
 import ConfirmDialog from "../components/ConfirmDialog";
+import NoteTypeBadge from "../components/NoteTypeBadge";
 
 export default function Dashboard() {
     const { user } = useAuth();
@@ -108,6 +109,7 @@ export default function Dashboard() {
                                             {j.title}
                                         </h2>
                                     </div>
+                                    <NoteTypeBadge type={j.noteType} />
                                 </div>
 
                                 {j.content && (

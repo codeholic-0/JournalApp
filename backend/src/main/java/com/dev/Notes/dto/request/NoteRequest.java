@@ -2,6 +2,8 @@ package com.dev.Notes.dto.request;
 
 import java.util.Map;
 
+import com.dev.Notes.enumeration.NoteType;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -19,6 +21,6 @@ public class NoteRequest {
     private String title;
     @Size(max = 5000)
     private String content;
-
+    private NoteType noteType;
     private Map<String, Object> contentJson;
 }

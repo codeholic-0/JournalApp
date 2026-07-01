@@ -3,6 +3,8 @@ package com.dev.Notes.dto.response;
 import java.time.LocalDateTime;
 import java.util.Map;
 
+import com.dev.Notes.enumeration.NoteType;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,4 +23,5 @@ public class NoteResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Map<String, Object> contentJson;
+    private NoteType noteType;
 }

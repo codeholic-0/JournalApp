@@ -9,6 +9,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import com.dev.Notes.enumeration.NoteType;
+
 @Document(collection = "note_entries")
 @Getter
 @Setter
@@ -33,4 +35,6 @@ public class Note {
     private String username;
 
     private Map<String, Object> contentJson;
+
+    private NoteType noteType = NoteType.BASIC;
 }

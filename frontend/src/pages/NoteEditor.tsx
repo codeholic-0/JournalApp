@@ -22,10 +22,11 @@ import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import { useAuth } from "../hooks/useAuth";
 import { useNote, useCreateNote, useUpdateNote } from "../hooks/useNotes";
-import type { NoteDraft } from "../types/note";
+import type { NoteDraft, NoteType } from "../types/note";
 
 const schema = z.object({
     title: z.string().min(1, "Title is required"),
+    noteType: z.string().optional(),
 });
 
 type NoteForm = z.infer<typeof schema>;
@@ -155,6 +156,7 @@ export default function NoteEditor() {
                 title: data.title,
                 content: markdown,
                 contentJson: editor.getJSON(),
+                noteType: (data.noteType as NoteType) || "BASIC",
             };
             if (isEdit && id) {
                 await updateNote.mutateAsync({ username, id, data: payload });
@@ -198,6 +200,26 @@ export default function NoteEditor() {
                         {errors.title.message}
                     </p>
                 )}
+
+                <div className="flex items-center gap-2">
+                    <label className="text-xs text-on-surface-muted">
+                        Type
+                    </label>
+                    <select
+                        {...register("noteType")}
+                        defaultValue="BASIC"
+                        className="text-xs bg-surface-alt border border-outline rounded px-2 py-1 text-on-surface focus:outline-none focus:ring-1 focus:ring-primary"
+                    >
+                        <option value="BASIC">Basic</option>
+                        <option value="DAILY">Daily</option>
+                        <option value="TASK">Task</option>
+                        <option value="DATABASE">Database</option>
+                        <option value="JOURNAL">Journal</option>
+                        <option value="MEETING">Meeting</option>
+                        <option value="PROJECT">Project</option>
+                        <option value="WHITEBOARD">Whiteboard</option>
+                    </select>
+                </div>
 
                 <div className="flex items-center gap-1 px-1 py-2 border-b border-outline">
                     <ToolbarButton

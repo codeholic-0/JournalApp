@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.dev.Notes.dto.request.NoteRequest;
 import com.dev.Notes.dto.response.NoteResponse;
+import com.dev.Notes.enumeration.NoteType;
 import com.dev.Notes.exceptions.NoteOwnershipMismatchException;
 import com.dev.Notes.exceptions.ResourceNotFoundException;
 import com.dev.Notes.models.Note;
@@ -38,25 +39,27 @@ public class NoteService {
         this.redisTemplate = redisTemplate;
     }
 
-    private Note toNoteEntry(NoteRequest req) {
-        Note entry = new Note();
-        entry.setTitle(req.getTitle());
-        entry.setContent(req.getContent());
+    private Note toNote(NoteRequest req) {
+        Note note = new Note();
+        note.setTitle(req.getTitle());
+        note.setContent(req.getContent());
+        note.setNoteType(req.getNoteType() != null ? req.getNoteType() : NoteType.BASIC);
         if (req.getContentJson() != null) {
-            entry.setContentJson(req.getContentJson());
+            note.setContentJson(req.getContentJson());
         }
-        return entry;
+        return note;
     }
 
-    private NoteResponse toNoteResponse(Note entry) {
+    private NoteResponse toNoteResponse(Note note) {
         NoteResponse res = new NoteResponse();
-        res.setId(entry.getId());
-        res.setTitle(entry.getTitle());
-        res.setContent(entry.getContent());
-        res.setContentJson(entry.getContentJson());
-        res.setUsername(entry.getUsername());
-        res.setCreatedAt(entry.getCreatedAt());
-        res.setUpdatedAt(entry.getUpdatedAt());
+        res.setId(note.getId());
+        res.setTitle(note.getTitle());
+        res.setContent(note.getContent());
+        res.setNoteType(note.getNoteType());
+        res.setContentJson(note.getContentJson());
+        res.setUsername(note.getUsername());
+        res.setCreatedAt(note.getCreatedAt());
+        res.setUpdatedAt(note.getUpdatedAt());
         return res;
     }
 
@@ -66,17 +69,17 @@ public class NoteService {
                 .findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "User with username: " + username + " not found"));
-        var entry = toNoteEntry(req);
-        entry.setUsername(username);
-        noteRepository.save(entry);
-        user.getNoteIds().add(entry.getId());
+        var note = toNote(req);
+        note.setUsername(username);
+        noteRepository.save(note);
+        user.getNoteIds().add(note.getId());
         userRepository.save(user);
         evictNotesCache(username);
         log.info("Note created: {} for user: {}", req.getTitle(), username);
-        if (entry.getContentJson() == null) {
-            entry.setContentJson(Map.of("type", "doc", "content", List.of(Map.of("type", "paragraph"))));
+        if (note.getContentJson() == null) {
+            note.setContentJson(Map.of("type", "doc", "content", List.of(Map.of("type", "paragraph"))));
         }
-        var res = noteRepository.save(entry);
+        var res = noteRepository.save(note);
         return toNoteResponse(res);
     }
 
@@ -90,12 +93,12 @@ public class NoteService {
         } catch (Exception e) {
             log.warn("Cache read error for key {}: {}", key, e.getMessage());
         }
-        var entry = noteRepository
+        var note = noteRepository
                 .findById(noteId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Note not found with id: " + noteId));
-        if (entry.getUsername().equals(username)) {
-            NoteResponse response = toNoteResponse(entry);
+        if (note.getUsername().equals(username)) {
+            NoteResponse response = toNoteResponse(note);
             try {
                 redisTemplate.opsForValue().set(key, response, Duration.ofMinutes(5));
             } catch (Exception e) {
@@ -103,7 +106,7 @@ public class NoteService {
             }
             return response;
         } else {
-            log.warn("Ownership mismatch! user: {} tried to access note: {}", username, entry.getTitle());
+            log.warn("Ownership mismatch! user: {} tried to access note: {}", username, note.getTitle());
             throw new NoteOwnershipMismatchException(username);
         }
     }
@@ -124,23 +127,25 @@ public class NoteService {
             String username,
             String noteId,
             NoteRequest updates) {
-        var entry = noteRepository
+        var note = noteRepository
                 .findById(noteId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Note not found with id: " + noteId));
-        if (entry.getUsername().equals(username)) {
+        if (note.getUsername().equals(username)) {
             if (updates.getTitle() != null)
-                entry.setTitle(updates.getTitle());
+                note.setTitle(updates.getTitle());
             if (updates.getContent() != null)
-                entry.setContent(updates.getContent());
+                note.setContent(updates.getContent());
+            if(updates.getNoteType() != null)
+                note.setNoteType(updates.getNoteType());
             if (updates.getContentJson() != null)
-                entry.setContentJson(updates.getContentJson());
-            noteRepository.save(entry);
+                note.setContentJson(updates.getContentJson());
+            noteRepository.save(note);
             evictNoteCache(noteId);
-            log.info("Note: {} updated", entry.getId());
-            return toNoteResponse(entry);
+            log.info("Note: {} updated", note.getId());
+            return toNoteResponse(note);
         } else {
-            log.warn("Ownership mismatch! user: {} tried to access note: {}", username, entry.getId());
+            log.warn("Ownership mismatch! user: {} tried to access note: {}", username, note.getId());
             throw new NoteOwnershipMismatchException(username);
         }
     }
@@ -151,19 +156,19 @@ public class NoteService {
                 .findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "User not found with username: " + username));
-        var entry = noteRepository
+        var note = noteRepository
                 .findById(noteId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Note not found with id: " + noteId));
-        if (entry.getUsername().equals(username)) {
-            noteRepository.delete(entry);
+        if (note.getUsername().equals(username)) {
+            noteRepository.delete(note);
             user.getNoteIds().remove(noteId);
             userRepository.save(user);
             evictNoteCache(noteId);
             evictNotesCache(username);
-            log.info("note {} deleted for user: {}", entry.getId(), username);
+            log.info("note {} deleted for user: {}", note.getId(), username);
         } else {
-            log.warn("Ownership mismatch! user: {} tried to access note: {}", username, entry.getId());
+            log.warn("Ownership mismatch! user: {} tried to access note: {}", username, note.getId());
             throw new NoteOwnershipMismatchException(username);
         }
     }

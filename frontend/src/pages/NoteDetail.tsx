@@ -15,6 +15,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useNote, useDeleteNote } from "../hooks/useNotes";
 import { Skeleton, SkeletonText } from "../components/Skeleton";
 import ConfirmDialog from "../components/ConfirmDialog";
+import NoteTypeBadge from "../components/NoteTypeBadge";
 
 export default function NoteDetail() {
     const { id } = useParams();
@@ -86,6 +87,7 @@ export default function NoteDetail() {
                     <h1 className="text-2xl font-bold text-on-surface wrap-break-word">
                         {note.title}
                     </h1>
+                    <NoteTypeBadge type={note.noteType} />
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                     <Link

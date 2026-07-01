@@ -2,6 +2,7 @@ export interface NoteResponse {
     id: string;
     title: string;
     content: string;
+    noteType?: NoteType;
     contentJson?: Record<string, unknown> | null;
     createdAt: string;
     updatedAt: string;
@@ -10,6 +11,7 @@ export interface NoteResponse {
 export interface NoteRequest {
     title: string;
     content?: string;
+    noteType?: NoteType;
     contentJson?: Record<string, unknown> | null;
 }
 
@@ -31,3 +33,13 @@ export interface NoteDraft {
     markdown: string;
     savedAt: number;
 }
+
+export type NoteType =
+    | "BASIC"
+    | "DAILY"
+    | "TASK"
+    | "DATABASE"
+    | "JOURNAL"
+    | "MEETING"
+    | "PROJECT"
+    | "WHITEBOARD";
