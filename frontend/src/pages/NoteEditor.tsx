@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { defaultMarkdownSerializer } from "prosemirror-markdown";
 import { z } from "zod";
 import {
     ArrowLeft,
@@ -102,9 +103,12 @@ export default function NoteEditor() {
     const onSubmit = async (data: NoteForm) => {
         if (!editor) return;
         try {
+            const markdown = editor?.state.doc
+                ? defaultMarkdownSerializer.serialize(editor.state.doc)
+                : "";
             const payload = {
                 title: data.title,
-                content: data.title,
+                content: markdown,
                 contentJson: editor.getJSON(),
             };
             if (isEdit && id) {
