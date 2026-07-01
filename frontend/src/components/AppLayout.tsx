@@ -12,6 +12,7 @@ import {
     PanelLeftClose,
     PanelLeftOpen,
     UserCircle,
+    Trash2,
 } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../hooks/useTheme";
@@ -19,6 +20,7 @@ import { useTheme } from "../hooks/useTheme";
 const navItems = [
     { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
     { to: "/notes/new", label: "New Note", icon: FilePlus2, end: false },
+    { to: "/trash", label: "Trash", icon: Trash2, end: false },
 ];
 
 const accountItem = {

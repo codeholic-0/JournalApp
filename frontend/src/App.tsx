@@ -13,6 +13,7 @@ import Account from "./pages/Account";
 import NotFound from "./pages/NotFound";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { useTheme } from "./hooks/useTheme";
+import Trash from "./pages/Trash";
 
 const queryClient = new QueryClient();
 
@@ -45,6 +46,7 @@ export default function App() {
                                         path="account"
                                         element={<Account />}
                                     />
+                                    <Route path="trash" element={<Trash />} />
                                 </Route>
                             </Route>
                             <Route path="*" element={<NotFound />} />

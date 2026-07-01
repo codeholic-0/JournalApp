@@ -3,6 +3,7 @@ package com.dev.Notes.service;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.List;
 import java.util.Map;
@@ -60,6 +61,7 @@ public class NoteService {
         res.setUsername(note.getUsername());
         res.setCreatedAt(note.getCreatedAt());
         res.setUpdatedAt(note.getUpdatedAt());
+        res.setDeletedAt(note.getDeletedAt());
         return res;
     }
 
@@ -114,7 +116,7 @@ public class NoteService {
     public Page<NoteResponse> getNotesByUsername(String username, Pageable pageable) {
         if (userRepository.existsByUsername(username)) {
             return noteRepository
-                    .findByUsernameOrderByCreatedAtDesc(username, pageable)
+                    .findByUsernameAndDeletedAtIsNullOrderByCreatedAtDesc(username, pageable)
                     .map(this::toNoteResponse);
         } else {
             throw new ResourceNotFoundException(
@@ -136,7 +138,7 @@ public class NoteService {
                 note.setTitle(updates.getTitle());
             if (updates.getContent() != null)
                 note.setContent(updates.getContent());
-            if(updates.getNoteType() != null)
+            if (updates.getNoteType() != null)
                 note.setNoteType(updates.getNoteType());
             if (updates.getContentJson() != null)
                 note.setContentJson(updates.getContentJson());
@@ -161,12 +163,72 @@ public class NoteService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Note not found with id: " + noteId));
         if (note.getUsername().equals(username)) {
+            note.setDeletedAt(LocalDateTime.now());
+            noteRepository.save(note);
+            user.getNoteIds().remove(noteId);
+            userRepository.save(user);
+            evictNoteCache(noteId);
+            evictNotesCache(username);
+            log.info("note {} moved to trash for user: {}", note.getId(), username);
+        } else {
+            log.warn("Ownership mismatch! user: {} tried to access note: {}", username, note.getId());
+            throw new NoteOwnershipMismatchException(username);
+        }
+    }
+
+    public Page<NoteResponse> getTrashedNotes(String username, Pageable pageable) {
+        if (userRepository.existsByUsername(username)) {
+            return noteRepository
+                    .findByUsernameAndDeletedAtIsNotNullOrderByCreatedAtDesc(username, pageable)
+                    .map(this::toNoteResponse);
+        } else {
+            throw new ResourceNotFoundException(
+                    "User not found with username: " + username);
+        }
+    }
+
+    @Transactional
+    public NoteResponse restoreNote(String username, String noteId) {
+        var user = userRepository
+                .findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "User not found with username: " + username));
+        var note = noteRepository
+                .findById(noteId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Note not found with id: " + noteId));
+        if (note.getUsername().equals(username)) {
+            note.setDeletedAt(null);
+            noteRepository.save(note);
+            user.getNoteIds().add(noteId);
+            userRepository.save(user);
+            evictNoteCache(noteId);
+            evictNotesCache(username);
+            log.info("note {} restored for user: {}", note.getId(), username);
+            return toNoteResponse(note);
+        } else {
+            log.warn("Ownership mismatch! user: {} tried to access note: {}", username, note.getId());
+            throw new NoteOwnershipMismatchException(username);
+        }
+    }
+
+    @Transactional
+    public void purgeNote(String username, String noteId) {
+        var user = userRepository
+                .findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "User not found with username: " + username));
+        var note = noteRepository
+                .findById(noteId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Note not found with id: " + noteId));
+        if (note.getUsername().equals(username)) {
             noteRepository.delete(note);
             user.getNoteIds().remove(noteId);
             userRepository.save(user);
             evictNoteCache(noteId);
             evictNotesCache(username);
-            log.info("note {} deleted for user: {}", note.getId(), username);
+            log.info("note {} permanently deleted for user: {}", note.getId(), username);
         } else {
             log.warn("Ownership mismatch! user: {} tried to access note: {}", username, note.getId());
             throw new NoteOwnershipMismatchException(username);

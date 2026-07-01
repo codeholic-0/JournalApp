@@ -7,5 +7,7 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import com.dev.Notes.models.Note;
 
 public interface NoteRepository extends MongoRepository<Note, String> {
-    Page<Note> findByUsernameOrderByCreatedAtDesc(String username, Pageable pageable);
+    Page<Note> findByUsernameAndDeletedAtIsNullOrderByCreatedAtDesc(String username, Pageable pageable);
+
+    Page<Note> findByUsernameAndDeletedAtIsNotNullOrderByCreatedAtDesc(String username, Pageable pageable);
 }

@@ -24,4 +24,5 @@ public class NoteResponse {
     private LocalDateTime updatedAt;
     private Map<String, Object> contentJson;
     private NoteType noteType;
+    private LocalDateTime deletedAt;
 }

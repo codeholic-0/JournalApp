@@ -7,7 +7,7 @@ interface ConfirmDialogProps {
     title: string;
     message: string;
     confirmLabel?: string;
-    confirmClass?: string;
+    variant?: "danger" | "default";
 }
 
 export default function ConfirmDialog({
@@ -16,10 +16,16 @@ export default function ConfirmDialog({
     onConfirm,
     title,
     message,
-    confirmLabel = "Delete",
-    confirmClass = "bg-red-600 hover:bg-red-700",
+    confirmLabel,
+    variant = "danger",
 }: ConfirmDialogProps) {
     if (!open) return null;
+
+    const isDanger = variant !== "default";
+    const label = confirmLabel ?? (isDanger ? "Delete" : "Confirm");
+    const btnClass = isDanger
+        ? "bg-red-600 hover:bg-red-700"
+        : "bg-primary hover:bg-primary-hover";
 
     return (
         <div
@@ -32,8 +38,17 @@ export default function ConfirmDialog({
             >
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-red-600/10 flex items-center justify-center">
-                            <AlertTriangle size={20} className="text-red-400" />
+                        <div
+                            className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                                isDanger ? "bg-red-600/10" : "bg-primary/10"
+                            }`}
+                        >
+                            <AlertTriangle
+                                size={20}
+                                className={
+                                    isDanger ? "text-red-400" : "text-primary"
+                                }
+                            />
                         </div>
                         <h3 className="text-lg font-semibold text-on-surface">
                             {title}
@@ -54,9 +69,9 @@ export default function ConfirmDialog({
                 <div className="flex gap-3 pt-2">
                     <button
                         onClick={onConfirm}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors active:scale-[0.98] ${confirmClass}`}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors active:scale-[0.98] ${btnClass}`}
                     >
-                        {confirmLabel}
+                        {label}
                     </button>
                     <button
                         onClick={onClose}

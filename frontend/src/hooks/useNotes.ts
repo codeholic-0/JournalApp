@@ -62,3 +62,34 @@ export const useDeleteNote = () => {
         },
     });
 };
+
+export const useTrashNotes = (username: string, page: number = 0) =>
+    useQuery({
+        queryKey: ["trash", username, page],
+        queryFn: () => notesApi.getTrashedNotes(username, page),
+        enabled: !!username,
+        placeholderData: (previousData) => previousData,
+    });
+
+export const useRestoreNote = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ username, id }: { username: string; id: string }) =>
+            notesApi.restoreNote(username, id),
+        onSuccess: (_data, { username }) => {
+            qc.invalidateQueries({ queryKey: ["trash", username] });
+            qc.invalidateQueries({ queryKey: ["notes", username] });
+        },
+    });
+};
+
+export const usePurgeNote = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ username, id }: { username: string; id: string }) =>
+            notesApi.purgeNote(username, id),
+        onSuccess: (_data, { username }) => {
+            qc.invalidateQueries({ queryKey: ["trash", username] });
+        },
+    });
+};

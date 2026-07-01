@@ -37,4 +37,6 @@ public class Note {
     private Map<String, Object> contentJson;
 
     private NoteType noteType = NoteType.BASIC;
+
+    private LocalDateTime deletedAt;
 }

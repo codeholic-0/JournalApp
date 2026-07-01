@@ -92,4 +92,39 @@ public class NoteController {
         noteService.deleteNote(username, noteId);
         return ResponseEntity.noContent().build();
     }
+
+    @Operation(summary = "List trashed notes", description = "Get all soft-deleted notes for the authenticated user")
+    @ApiResponse(responseCode = "200", description = "List of trashed notes")
+    @ApiResponse(responseCode = "404", description = "User not found")
+    @GetMapping("/trash")
+    public ResponseEntity<Page<NoteResponse>> getTrashedNotes(
+            @PathVariable String username,
+            @PageableDefault(size = 10) Pageable pageable) {
+        var res = noteService.getTrashedNotes(username, pageable);
+        return ResponseEntity.ok(res);
+    }
+
+    @Operation(summary = "Restore note", description = "Restore a soft-deleted note by its ID")
+    @ApiResponse(responseCode = "200", description = "Note restored")
+    @ApiResponse(responseCode = "404", description = "Note not found")
+    @ApiResponse(responseCode = "403", description = "Note does not belong to the user")
+    @PostMapping("/{noteId}/restore")
+    public ResponseEntity<NoteResponse> restoreNote(
+            @PathVariable String username,
+            @PathVariable String noteId) {
+        var res = noteService.restoreNote(username, noteId);
+        return ResponseEntity.ok(res);
+    }
+
+    @Operation(summary = "Purge note", description = "Permanently hard-delete a note (cannot be undone)")
+    @ApiResponse(responseCode = "204", description = "Note purged")
+    @ApiResponse(responseCode = "404", description = "Note not found")
+    @ApiResponse(responseCode = "403", description = "Note does not belong to the user")
+    @DeleteMapping("/{noteId}/purge")
+    public ResponseEntity<Void> purgeNote(
+            @PathVariable String username,
+            @PathVariable String noteId) {
+        noteService.purgeNote(username, noteId);
+        return ResponseEntity.noContent().build();
+    }
 }

@@ -1,58 +1,61 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import {
     FileText,
-    FilePlus2,
-    Calendar,
-    Eye,
-    Pencil,
     Trash2,
+    RotateCcw,
+    Calendar,
     ChevronLeft,
     ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../hooks/useAuth";
-import { useNotes, useDeleteNote } from "../hooks/useNotes";
+import { useTrashNotes, useRestoreNote, usePurgeNote } from "../hooks/useNotes";
 import { SkeletonCard } from "../components/Skeleton";
 import ConfirmDialog from "../components/ConfirmDialog";
-import NoteTypeBadge from "../components/NoteTypeBadge";
 
-export default function Dashboard() {
+export default function Trash() {
     const { user } = useAuth();
     const [page, setPage] = useState(0);
-    const { data, isLoading, isError } = useNotes(user?.username ?? "", page);
-    const deleteNote = useDeleteNote();
-    const [deleteTarget, setDeleteTarget] = useState<{
+    const { data, isLoading, isError } = useTrashNotes(
+        user?.username ?? "",
+        page,
+    );
+    const restoreNote = useRestoreNote();
+    const purgeNote = usePurgeNote();
+    const [confirmTarget, setConfirmTarget] = useState<{
         id: string;
         title: string;
+        action: "restore" | "purge";
     } | null>(null);
 
     const notes = data?.content ?? [];
     const totalPages = data?.page?.totalPages ?? 0;
 
-    const handleDelete = async () => {
-        if (!deleteTarget) return;
+    const handleConfirm = async () => {
+        if (!confirmTarget) return;
+        const { id, action } = confirmTarget;
+        const username = user?.username ?? "";
         try {
-            await deleteNote.mutateAsync({
-                username: user?.username ?? "",
-                id: deleteTarget.id,
-            });
-            toast.success("Note deleted");
-            setDeleteTarget(null);
-            if (notes.length === 1 && page > 0) {
-                setPage((p) => p - 1);
+            if (action === "restore") {
+                await restoreNote.mutateAsync({ username, id });
+                toast.success("Note restored");
+            } else {
+                await purgeNote.mutateAsync({ username, id });
+                toast.success("Note permanently deleted");
             }
+            setConfirmTarget(null);
+            if (notes.length === 1 && page > 0) setPage((p) => p - 1);
         } catch {
-            toast.error("Failed to delete note");
+            toast.error("Action failed");
         }
     };
 
     if (isLoading) {
         return (
             <div className="space-y-4">
-                <h1 className="text-2xl font-bold text-on-surface">My Notes</h1>
+                <h1 className="text-2xl font-bold text-on-surface">Trash</h1>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {Array.from({ length: 6 }).map((_, i) => (
+                    {Array.from({ length: 3 }).map((_, i) => (
                         <SkeletonCard key={i} />
                     ))}
                 </div>
@@ -61,35 +64,19 @@ export default function Dashboard() {
     }
 
     if (isError) {
-        return <p className="text-red-400">Failed to load notes.</p>;
+        return <p className="text-red-400">Failed to load trash.</p>;
     }
 
     return (
         <div className="space-y-6 animate-fadeIn">
-            <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold text-on-surface">My Notes</h1>
-                <Link
-                    to="/notes/new"
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-hover transition-colors active:scale-[0.98]"
-                >
-                    <FilePlus2 size={16} />
-                    New Note
-                </Link>
-            </div>
+            <h1 className="text-2xl font-bold text-on-surface">Trash</h1>
 
-            {notes.length === 0 && page === 0 ? (
+            {notes.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 space-y-4">
-                    <FileText size={48} className="text-on-surface-muted" />
+                    <Trash2 size={48} className="text-on-surface-muted" />
                     <p className="text-on-surface-muted text-sm">
-                        No note entries yet.
+                        Trash is empty.
                     </p>
-                    <Link
-                        to="/notes/new"
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-hover transition-colors"
-                    >
-                        <FilePlus2 size={16} />
-                        Create your first one
-                    </Link>
                 </div>
             ) : (
                 <>
@@ -97,19 +84,18 @@ export default function Dashboard() {
                         {notes.map((j) => (
                             <div
                                 key={j.id}
-                                className="group bg-surface-alt rounded-xl border border-outline p-4 space-y-3 hover:scale-[1.02] hover:shadow-md transition-all duration-200"
+                                className="group bg-surface-alt rounded-xl border border-outline p-4 space-y-3 opacity-80 hover:opacity-100 transition-opacity"
                             >
                                 <div className="flex items-start gap-3">
                                     <FileText
                                         size={18}
-                                        className="text-primary shrink-0 mt-0.5"
+                                        className="text-on-surface-muted shrink-0 mt-0.5"
                                     />
                                     <div className="min-w-0 flex-1">
                                         <h2 className="font-semibold text-on-surface truncate">
                                             {j.title}
                                         </h2>
                                     </div>
-                                    <NoteTypeBadge type={j.noteType} />
                                 </div>
 
                                 {j.content && (
@@ -121,40 +107,39 @@ export default function Dashboard() {
                                 <div className="flex items-center gap-1.5 text-xs text-on-surface-muted">
                                     <Calendar size={12} />
                                     <span>
+                                        Deleted:{" "}
                                         {new Date(
-                                            j.createdAt,
+                                            j.updatedAt,
                                         ).toLocaleDateString()}
                                     </span>
                                 </div>
 
-                                <div className="flex items-center justify-between pt-1">
-                                    <div className="flex gap-3">
-                                        <Link
-                                            to={`/notes/${j.id}`}
-                                            className="flex items-center gap-1 text-xs text-on-surface-muted hover:text-primary transition-colors"
-                                        >
-                                            <Eye size={14} />
-                                            View
-                                        </Link>
-                                        <Link
-                                            to={`/notes/${j.id}/edit`}
-                                            className="flex items-center gap-1 text-xs text-on-surface-muted hover:text-primary transition-colors"
-                                        >
-                                            <Pencil size={14} />
-                                            Edit
-                                        </Link>
-                                    </div>
+                                <div className="flex items-center gap-3 pt-1">
                                     <button
                                         onClick={() =>
-                                            setDeleteTarget({
+                                            setConfirmTarget({
                                                 id: j.id,
                                                 title: j.title,
+                                                action: "restore",
+                                            })
+                                        }
+                                        className="flex items-center gap-1 text-xs text-green-500 hover:text-green-400 font-medium transition-colors"
+                                    >
+                                        <RotateCcw size={14} />
+                                        Restore
+                                    </button>
+                                    <button
+                                        onClick={() =>
+                                            setConfirmTarget({
+                                                id: j.id,
+                                                title: j.title,
+                                                action: "purge",
                                             })
                                         }
                                         className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 font-medium transition-colors"
                                     >
                                         <Trash2 size={14} />
-                                        Delete
+                                        Purge
                                     </button>
                                 </div>
                             </div>
@@ -188,11 +173,25 @@ export default function Dashboard() {
             )}
 
             <ConfirmDialog
-                open={deleteTarget !== null}
-                onClose={() => setDeleteTarget(null)}
-                onConfirm={handleDelete}
-                title="Delete note?"
-                message={`Move "${deleteTarget?.title}" to trash?`}
+                open={confirmTarget !== null}
+                onClose={() => setConfirmTarget(null)}
+                onConfirm={handleConfirm}
+                variant={
+                    confirmTarget?.action === "restore" ? "default" : "danger"
+                }
+                confirmLabel={
+                    confirmTarget?.action === "restore" ? "Restore" : "Delete"
+                }
+                title={
+                    confirmTarget?.action === "restore"
+                        ? "Restore note?"
+                        : "Permanently delete?"
+                }
+                message={
+                    confirmTarget?.action === "restore"
+                        ? `Restore "${confirmTarget?.title}" to your notes?`
+                        : `Permanently delete "${confirmTarget?.title}"? This cannot be undone.`
+                }
             />
         </div>
     );

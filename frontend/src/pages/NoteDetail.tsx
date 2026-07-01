@@ -132,7 +132,7 @@ export default function NoteDetail() {
                 onClose={() => setDeleteTarget(null)}
                 onConfirm={handleDelete}
                 title="Delete note?"
-                message={`Are you sure you want to delete "${deleteTarget?.title}"? This action cannot be undone.`}
+                message={`Move "${deleteTarget?.title}" to trash?`}
             />
         </div>
     );
