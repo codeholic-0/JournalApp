@@ -1,0 +1,23 @@
+package com.dev.Notes.dto.response;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import com.dev.Notes.enumeration.UserType;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class AuthResponse {
+    private String id;
+    private String accessToken;
+    private String refreshToken;
+    private String username;
+    private List<UserType> roles = new ArrayList<>();
+}

@@ -128,7 +128,7 @@ export default function Account() {
                     Delete account
                 </h2>
                 <p className="text-sm text-on-surface-muted">
-                    This action is permanent. All your journals will be deleted.
+                    This action is permanent. All your notes will be deleted.
                 </p>
                 <button
                     onClick={() => setShowDeleteModal(true)}
@@ -171,7 +171,7 @@ export default function Account() {
 
                         <p className="text-sm text-on-surface-muted leading-relaxed">
                             This will permanently delete your account and all
-                            journals. This action cannot be undone.
+                            notes. This action cannot be undone.
                         </p>
 
                         <div className="flex gap-3 pt-2">

@@ -7,8 +7,8 @@ import AppLayout from "./components/AppLayout";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
-import JournalEditor from "./pages/JournalEditor";
-import JournalDetail from "./pages/JournalDetail";
+import NoteEditor from "./pages/NoteEditor";
+import NoteDetail from "./pages/NoteDetail";
 import Account from "./pages/Account";
 import NotFound from "./pages/NotFound";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -30,16 +30,16 @@ export default function App() {
                                 <Route element={<AppLayout />}>
                                     <Route index element={<Dashboard />} />
                                     <Route
-                                        path="journals/new"
-                                        element={<JournalEditor />}
+                                        path="notes/new"
+                                        element={<NoteEditor />}
                                     />
                                     <Route
-                                        path="journals/:id"
-                                        element={<JournalDetail />}
+                                        path="notes/:id"
+                                        element={<NoteDetail />}
                                     />
                                     <Route
-                                        path="journals/:id/edit"
-                                        element={<JournalEditor />}
+                                        path="notes/:id/edit"
+                                        element={<NoteEditor />}
                                     />
                                     <Route
                                         path="account"

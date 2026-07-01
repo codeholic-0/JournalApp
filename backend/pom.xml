@@ -10,7 +10,7 @@
         <relativePath /> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.dev</groupId>
-    <artifactId>JournalApp</artifactId>
+    <artifactId>Notes</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <properties>
         <java.version>25</java.version>
