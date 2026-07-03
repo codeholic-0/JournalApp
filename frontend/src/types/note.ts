@@ -33,8 +33,7 @@ export interface PagedResponse<T> {
 
 export interface NoteDraft {
     title: string;
-    contentJson: Record<string, unknown>;
-    markdown: string;
+    content: string;
     savedAt: number;
 }
 

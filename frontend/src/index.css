@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 @theme {
     --color-surface: #ffffff;
@@ -24,6 +25,50 @@
     --color-primary-hover: #6aa3f0;
     --color-outline: #333333;
     --color-hover: #2a2a2a;
+    --tw-prose-body: var(--color-on-surface);
+    --tw-prose-headings: var(--color-on-surface);
+    --tw-prose-links: var(--color-primary);
+    --tw-prose-bold: var(--color-on-surface);
+    --tw-prose-counters: var(--color-on-surface-muted);
+    --tw-prose-bullets: var(--color-on-surface-muted);
+    --tw-prose-hr: var(--color-outline);
+    --tw-prose-quotes: var(--color-on-surface);
+    --tw-prose-quote-borders: var(--color-outline);
+    --tw-prose-code: var(--color-on-surface);
+    --tw-prose-pre-code: var(--color-on-surface);
+    --tw-prose-pre-bg: var(--color-surface-alt);
+    --tw-prose-th-borders: var(--color-outline);
+    --tw-prose-td-borders: var(--color-outline);
+}
+
+.dark .prose {
+    color: var(--color-on-surface);
+}
+.dark .prose h1,
+.dark .prose h2,
+.dark .prose h3,
+.dark .prose h4,
+.dark .prose h5,
+.dark .prose h6 {
+    color: var(--color-on-surface);
+}
+.dark .prose a {
+    color: var(--color-primary);
+}
+.dark .prose strong {
+    color: var(--color-on-surface);
+}
+.dark .prose code {
+    color: var(--color-on-surface);
+    background-color: var(--color-surface-alt);
+}
+.dark .prose blockquote {
+    color: var(--color-on-surface-muted);
+    border-left-color: var(--color-outline);
+}
+.dark .prose ol > li::marker,
+.dark .prose ul > li::marker {
+    color: var(--color-on-surface-muted);
 }
 
 @keyframes fadeIn {

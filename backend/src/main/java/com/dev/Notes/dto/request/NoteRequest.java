@@ -19,7 +19,7 @@ public class NoteRequest {
 
     @NotBlank
     private String title;
-    @Size(max = 5000)
+    @Size(max = 200000)
     private String content;
     private NoteType noteType;
     private Map<String, Object> contentJson;

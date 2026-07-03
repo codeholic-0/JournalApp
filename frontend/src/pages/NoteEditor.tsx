@@ -1,28 +1,19 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { defaultMarkdownSerializer } from "prosemirror-markdown";
 import { z } from "zod";
-import {
-    ArrowLeft,
-    Bold,
-    FileText,
-    Heading1,
-    Heading2,
-    Heading3,
-    Italic,
-    List,
-    ListOrdered,
-    Loader2,
-} from "lucide-react";
+import { ArrowLeft, FileText, Loader2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
-import { useEditor, EditorContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import Placeholder from "@tiptap/extension-placeholder";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeSanitize from "rehype-sanitize";
+import rehypeHighlight from "rehype-highlight";
 import { useAuth } from "../hooks/useAuth";
 import { useNote, useCreateNote, useUpdateNote } from "../hooks/useNotes";
+import { useMdEditor } from "../hooks/useMdEditor";
 import type { NoteDraft, NoteType } from "../types/note";
+import { useDebouncedCallback } from "../hooks/useDebouncedCallback";
 
 const schema = z.object({
     title: z.string().min(1, "Title is required"),
@@ -30,30 +21,6 @@ const schema = z.object({
 });
 
 type NoteForm = z.infer<typeof schema>;
-
-function ToolbarButton({
-    onClick,
-    active,
-    children,
-}: {
-    onClick: () => void;
-    active: boolean;
-    children: React.ReactNode;
-}) {
-    return (
-        <button
-            type="button"
-            onClick={onClick}
-            className={`p-1.5 rounded transition-colors ${
-                active
-                    ? "bg-primary text-white"
-                    : "text-on-surface-muted hover:bg-hover hover:text-on-surface"
-            }`}
-        >
-            {children}
-        </button>
-    );
-}
 
 export default function NoteEditor() {
     const { id } = useParams();
@@ -67,10 +34,6 @@ export default function NoteEditor() {
     const createNote = useCreateNote();
     const updateNote = useUpdateNote();
 
-    const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saved">(
-        "idle",
-    );
-
     const {
         register,
         handleSubmit,
@@ -79,18 +42,51 @@ export default function NoteEditor() {
         formState: { errors, isSubmitting },
     } = useForm<NoteForm>({ resolver: zodResolver(schema) });
 
-    const editor = useEditor({
-        extensions: [
-            StarterKit,
-            Placeholder.configure({ placeholder: "Write your note..." }),
-        ],
-        content:
-            isEdit && existing?.contentJson
-                ? existing.contentJson
-                : { type: "doc", content: [{ type: "paragraph" }] },
+    type AutoSaveStatus = "idle" | "saved" | "failed";
+    const [autoSaveStatus, setAutoSaveStatus] = useState<AutoSaveStatus>(
+        "idle",
+    );
+    const [previewMd, setPreviewMd] = useState("");
+    const dirtyRef = useRef(false);
+    const lastSavedRef = useRef("");
+
+    const [showPreview, setShowPreview] = useState(
+        () => localStorage.getItem("md-preview") === "true",
+    );
+
+    const getDebouncedSaveRef = useRef<() => void>(() => {});
+    const getDebouncedPreviewRef = useRef<(v: string) => void>(() => {});
+
+    const { editorRef, getValue, setValue } = useMdEditor({
+        onDocChange: (value) => {
+            dirtyRef.current = true;
+            getDebouncedSaveRef.current();
+            getDebouncedPreviewRef.current(value);
+        },
     });
 
-    // Restore draft on mount (only for new notes)
+    const debouncedSave = useDebouncedCallback(() => {
+        const content = getValue();
+        const title = getValues("title");
+        if (content === lastSavedRef.current) return;
+
+        const draft: NoteDraft = { title, content, savedAt: Date.now() };
+        localStorage.setItem(draftKey, JSON.stringify(draft));
+        lastSavedRef.current = content;
+        setAutoSaveStatus("saved");
+        setTimeout(() => setAutoSaveStatus("idle"), 3000);
+    }, 1500);
+
+    const debouncedPreview = useDebouncedCallback((value: string) => {
+        setPreviewMd(value);
+    }, 250);
+
+    useEffect(() => {
+        getDebouncedSaveRef.current = debouncedSave;
+        getDebouncedPreviewRef.current = debouncedPreview;
+    });
+
+    // Restore draft on mount
     useEffect(() => {
         const raw = localStorage.getItem(draftKey);
         if (!raw) return;
@@ -98,64 +94,39 @@ export default function NoteEditor() {
             const draft: NoteDraft = JSON.parse(raw);
             if (!isEdit || !existing) {
                 reset({ title: draft.title });
-                editor?.commands.setContent(draft.contentJson);
+                setValue(draft.content);
             }
         } catch {
-            /* ignore corrupt draft */
+            /* ignore */
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    // Sync when existing note loads (edit mode)
     useEffect(() => {
-        if (isEdit && existing?.contentJson && editor) {
-            const currentJson = editor.getJSON();
-            const existingJson = existing.contentJson;
-            if (JSON.stringify(currentJson) !== JSON.stringify(existingJson)) {
-                editor.commands.setContent(existingJson);
+        if (isEdit && existing?.content) {
+            lastSavedRef.current = existing.content;
+            if (!dirtyRef.current) {
+                setValue(existing.content);
+                reset({ title: existing.title, noteType: existing.noteType });
             }
         }
-    }, [existing, editor, isEdit]);
-
-    useEffect(() => {
-        return () => editor?.destroy();
-    }, [editor]);
-
-    // Debounced auto-save to localStorage
-    useEffect(() => {
-        if (!editor) return;
-        const timer = setTimeout(() => {
-            const json = editor.getJSON();
-            const markdown = editor.state.doc
-                ? defaultMarkdownSerializer.serialize(editor.state.doc)
-                : "";
-            const draft: NoteDraft = {
-                title: getValues("title"),
-                contentJson: json,
-                markdown,
-                savedAt: Date.now(),
-            };
-            localStorage.setItem(draftKey, JSON.stringify(draft));
-            setAutoSaveStatus("saved");
-            setTimeout(() => setAutoSaveStatus("idle"), 4000);
-        }, 1000);
-        return () => clearTimeout(timer);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [editor, getValues("title")]);
+    }, [existing]);
 
-    useEffect(() => {
-        if (existing) reset({ title: existing.title });
-    }, [existing, reset]);
+    const togglePreview = () => {
+        setShowPreview((p) => {
+            const next = !p;
+            localStorage.setItem("md-preview", String(next));
+            return next;
+        });
+    };
 
     const onSubmit = async (data: NoteForm) => {
-        if (!editor) return;
         try {
-            const markdown = editor.state.doc
-                ? defaultMarkdownSerializer.serialize(editor.state.doc)
-                : "";
             const payload = {
                 title: data.title,
-                content: markdown,
-                contentJson: editor.getJSON(),
+                content: getValue(),
                 noteType: (data.noteType as NoteType) || "BASIC",
             };
             if (isEdit && id) {
@@ -173,17 +144,27 @@ export default function NoteEditor() {
     };
 
     return (
-        <div className="max-w-3xl mx-auto space-y-6 animate-fadeIn">
-            <div className="flex items-center gap-3">
+        <div className="max-w-5xl mx-auto space-y-6 animate-fadeIn">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="p-1.5 rounded-lg text-on-surface-muted hover:bg-hover hover:text-on-surface transition-colors"
+                    >
+                        <ArrowLeft size={20} />
+                    </button>
+                    <h1 className="text-xl font-semibold text-on-surface">
+                        {isEdit ? "Edit Note" : "New Note"}
+                    </h1>
+                </div>
                 <button
-                    onClick={() => navigate(-1)}
-                    className="p-1.5 rounded-lg text-on-surface-muted hover:bg-hover hover:text-on-surface transition-colors"
+                    type="button"
+                    onClick={togglePreview}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-outline text-sm text-on-surface-muted hover:text-on-surface hover:bg-hover transition-colors"
                 >
-                    <ArrowLeft size={20} />
+                    {showPreview ? <EyeOff size={16} /> : <Eye size={16} />}
+                    {showPreview ? "Editor only" : "Rendered MD"}
                 </button>
-                <h1 className="text-xl font-semibold text-on-surface">
-                    {isEdit ? "Edit Note" : "New Note"}
-                </h1>
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -221,87 +202,36 @@ export default function NoteEditor() {
                     </select>
                 </div>
 
-                <div className="flex items-center gap-1 px-1 py-2 border-b border-outline">
-                    <ToolbarButton
-                        onClick={() =>
-                            editor
-                                ?.chain()
-                                .focus()
-                                .toggleHeading({ level: 1 })
-                                .run()
-                        }
-                        active={
-                            editor?.isActive("heading", { level: 1 }) ?? false
-                        }
-                    >
-                        <Heading1 size={18} />
-                    </ToolbarButton>
-                    <ToolbarButton
-                        onClick={() =>
-                            editor
-                                ?.chain()
-                                .focus()
-                                .toggleHeading({ level: 2 })
-                                .run()
-                        }
-                        active={
-                            editor?.isActive("heading", { level: 2 }) ?? false
-                        }
-                    >
-                        <Heading2 size={18} />
-                    </ToolbarButton>
-                    <ToolbarButton
-                        onClick={() =>
-                            editor
-                                ?.chain()
-                                .focus()
-                                .toggleHeading({ level: 3 })
-                                .run()
-                        }
-                        active={
-                            editor?.isActive("heading", { level: 3 }) ?? false
-                        }
-                    >
-                        <Heading3 size={18} />
-                    </ToolbarButton>
-                    <span className="w-px h-5 bg-outline mx-1" />
-                    <ToolbarButton
-                        onClick={() =>
-                            editor?.chain().focus().toggleBold().run()
-                        }
-                        active={editor?.isActive("bold") ?? false}
-                    >
-                        <Bold size={18} />
-                    </ToolbarButton>
-                    <ToolbarButton
-                        onClick={() =>
-                            editor?.chain().focus().toggleItalic().run()
-                        }
-                        active={editor?.isActive("italic") ?? false}
-                    >
-                        <Italic size={18} />
-                    </ToolbarButton>
-                    <span className="w-px h-5 bg-outline mx-1" />
-                    <ToolbarButton
-                        onClick={() =>
-                            editor?.chain().focus().toggleBulletList().run()
-                        }
-                        active={editor?.isActive("bulletList") ?? false}
-                    >
-                        <List size={18} />
-                    </ToolbarButton>
-                    <ToolbarButton
-                        onClick={() =>
-                            editor?.chain().focus().toggleOrderedList().run()
-                        }
-                        active={editor?.isActive("orderedList") ?? false}
-                    >
-                        <ListOrdered size={18} />
-                    </ToolbarButton>
-                </div>
-
-                <div className="min-h-50 prose prose-sm max-w-none">
-                    <EditorContent editor={editor} />
+                <div className={showPreview ? "grid grid-cols-2 gap-4" : ""}>
+                    <div
+                        ref={editorRef}
+                        className="min-h-100 border border-outline rounded-lg p-3 focus-within:ring-1 focus-within:ring-primary"
+                    />
+                    {showPreview && (
+                        <div className="prose prose-sm max-w-none border border-outline rounded-lg p-3 overflow-auto min-h-100">
+                            <ReactMarkdown
+                                remarkPlugins={[remarkGfm]}
+                                rehypePlugins={[
+                                    rehypeSanitize,
+                                    [
+                                        rehypeHighlight,
+                                        { detect: true, ignoreMissing: true },
+                                    ],
+                                ]}
+                                components={{
+                                    a: ({ ...props }) => (
+                                        <a
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            {...props}
+                                        />
+                                    ),
+                                }}
+                            >
+                                {previewMd}
+                            </ReactMarkdown>
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex items-center gap-3 pt-2">
@@ -327,10 +257,19 @@ export default function NoteEditor() {
                         >
                             Cancel
                         </button>
+                        {isEdit && autoSaveStatus !== "idle" && (
+                            <span
+                                className={`text-xs ${
+                                    autoSaveStatus === "saved"
+                                        ? "text-green-500"
+                                        : "text-red-400"
+                                }`}
+                            >
+                                {autoSaveStatus === "saved" && "Saved ✓"}
+                                {autoSaveStatus === "failed" && "Save failed"}
+                            </span>
+                        )}
                     </div>
-                    {autoSaveStatus !== "idle" && (
-                        <span className="text-xs text-green-500">Saved ✓</span>
-                    )}
                 </div>
             </form>
         </div>

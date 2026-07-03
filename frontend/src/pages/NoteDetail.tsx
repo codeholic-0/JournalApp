@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import {
     ArrowLeft,
@@ -11,8 +11,10 @@ import {
     Pin,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useEditor, EditorContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeSanitize from "rehype-sanitize";
+import rehypeHighlight from "rehype-highlight";
 import { useAuth } from "../hooks/useAuth";
 import {
     useNote,
@@ -37,19 +39,6 @@ export default function NoteDetail() {
         id: string;
         title: string;
     } | null>(null);
-
-    const editor = useEditor({
-        extensions: [StarterKit],
-        content: note?.contentJson ?? {
-            type: "doc",
-            content: [{ type: "paragraph" }],
-        },
-        editable: false,
-    });
-
-    useEffect(() => {
-        return () => editor?.destroy();
-    }, [editor]);
 
     const handleDelete = async () => {
         if (!deleteTarget) return;
@@ -163,7 +152,35 @@ export default function NoteDetail() {
             </div>
 
             <div className="border-t border-outline pt-6">
-                <EditorContent editor={editor} />
+                {note.content ? (
+                    <div className="prose prose-sm max-w-none">
+                        <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            rehypePlugins={[
+                                rehypeSanitize,
+                                [
+                                    rehypeHighlight,
+                                    { detect: true, ignoreMissing: true },
+                                ],
+                            ]}
+                            components={{
+                                a: (props) => (
+                                    <a
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        {...props}
+                                    />
+                                ),
+                            }}
+                        >
+                            {note.content}
+                        </ReactMarkdown>
+                    </div>
+                ) : (
+                    <p className="text-on-surface-muted italic">
+                        No content yet.
+                    </p>
+                )}
             </div>
 
             <ConfirmDialog
