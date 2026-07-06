@@ -5,10 +5,10 @@ import java.util.Map;
 
 import com.dev.Notes.enumeration.NoteType;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
 @Getter
 @Setter
@@ -26,4 +26,7 @@ public class NoteResponse {
     private LocalDateTime deletedAt;
     private boolean favorite = false;
     private boolean pinned = false;
+    private String workspaceId;
+    private String icon;
+    private String color;
 }

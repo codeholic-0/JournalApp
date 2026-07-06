@@ -31,3 +31,7 @@ resilience4j:
         limit-for-period: 5
         limit-refresh-period: 1m
         timeout-duration: 0s
+notes:
+  workspace:
+    delete:
+      byteThreshold: 524288000

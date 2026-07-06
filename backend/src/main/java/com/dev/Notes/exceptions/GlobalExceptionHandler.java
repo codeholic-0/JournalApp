@@ -92,6 +92,24 @@ public class GlobalExceptionHandler {
                                                 LocalDateTime.now()));
         }
 
+        @ExceptionHandler(WorkspaceConflictException.class)
+        public ResponseEntity<ErrorResponse> handleWorkspaceConflict(WorkspaceConflictException ex) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(
+                                new ErrorResponse(
+                                                ex.getMessage(),
+                                                HttpStatus.CONFLICT,
+                                                LocalDateTime.now()));
+        }
+
+        @ExceptionHandler(WorkspaceOwnershipMismatchException.class)
+        public ResponseEntity<ErrorResponse> handleWorkspaceOwnershipConflict(WorkspaceOwnershipMismatchException ex) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                                new ErrorResponse(
+                                                ex.getMessage(),
+                                                HttpStatus.FORBIDDEN,
+                                                LocalDateTime.now()));
+        }
+
         @ExceptionHandler(Exception.class)
         public ResponseEntity<ErrorResponse> handleGeneric(Exception ex) {
                 log.error("Unexpected Error Occurred!", ex);

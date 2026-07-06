@@ -1,9 +1,5 @@
 package com.dev.Notes.dto.response;
 
-import java.util.List;
-
-import com.dev.Notes.enumeration.UserType;
-
 import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
@@ -13,9 +9,8 @@ import lombok.AllArgsConstructor;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserResponse {
-
-    private String id;
-    private String username;
-    private List<UserType> roles;
+public class WorkspaceDeleteResponse {
+    private String mode;
+    private long bytes;
+    private int notesHandled;
 }

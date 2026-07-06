@@ -1,7 +1,5 @@
 package com.dev.Notes.dto.request;
 
-import jakarta.validation.constraints.NotBlank;
-
 import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
@@ -11,9 +9,8 @@ import lombok.AllArgsConstructor;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class LoginRequest {
-    @NotBlank
-    private String username;
-    @NotBlank
-    private String password;
+public class WorkspacePatchRequest {
+    private String name;
+    private String color;
+    private String icon;
 }

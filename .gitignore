@@ -35,7 +35,7 @@ build/
 
 # Application Properties
 **/application-local.properties
-**/application-local.yml
+**/application-local.yaml
 **/META-INF/
 
 # ZED Editor

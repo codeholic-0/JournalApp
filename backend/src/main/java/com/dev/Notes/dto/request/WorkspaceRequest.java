@@ -11,9 +11,11 @@ import lombok.AllArgsConstructor;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class LoginRequest {
+public class WorkspaceRequest {
     @NotBlank
-    private String username;
+    private String name;
     @NotBlank
-    private String password;
+    private String color;
+    @NotBlank
+    private String icon;
 }

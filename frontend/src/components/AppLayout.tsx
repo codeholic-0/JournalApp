@@ -9,13 +9,15 @@ import {
     LogOut,
     Menu,
     X,
-    PanelLeftClose,
     PanelLeftOpen,
     UserCircle,
     Trash2,
 } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../hooks/useTheme";
+import WorkspaceSwitcher from "./WorkspaceSwitcher";
+import SortSelector from "./SortSelector";
+import CreateWorkspaceModal from "./CreateWorkspaceModal";
 
 const navItems = [
     { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
@@ -35,6 +37,7 @@ export default function AppLayout() {
     const { isDark, toggle } = useTheme();
     const navigate = useNavigate();
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [showCreateModal, setShowCreateModal] = useState(false);
     const [collapsed, setCollapsed] = useState(() => {
         if (typeof window === "undefined") return false;
         return localStorage.getItem("sidebar-collapsed") === "true";
@@ -67,26 +70,24 @@ export default function AppLayout() {
         >
             {/* Workspace header */}
             <div
-                className={`flex items-center border-b border-outline p-3 ${collapsed ? "justify-center" : ""}`}
+                className={`border-b border-outline ${collapsed ? "p-3" : ""}`}
             >
-                {!collapsed && (
-                    <span className="text-sm font-semibold text-on-surface truncate">
-                        Notes
-                    </span>
+                {collapsed ? (
+                    <button
+                        onClick={toggleCollapsed}
+                        className="w-full p-1.5 rounded-md text-on-surface-muted hover:bg-hover hover:text-on-surface transition-colors"
+                        title="Expand sidebar"
+                    >
+                        <PanelLeftOpen size={18} className="mx-auto" />
+                    </button>
+                ) : (
+                    <div>
+                        <WorkspaceSwitcher
+                            onNewWorkspace={() => setShowCreateModal(true)}
+                        />
+                        <SortSelector />
+                    </div>
                 )}
-                <button
-                    onClick={toggleCollapsed}
-                    className={`p-1.5 rounded-md text-on-surface-muted hover:bg-hover hover:text-on-surface transition-colors ${
-                        collapsed ? "" : "ml-auto"
-                    }`}
-                    title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-                >
-                    {collapsed ? (
-                        <PanelLeftOpen size={18} />
-                    ) : (
-                        <PanelLeftClose size={18} />
-                    )}
-                </button>
             </div>
 
             {/* Primary nav */}
@@ -193,6 +194,12 @@ export default function AppLayout() {
                     >
                         {sidebarContent}
                     </div>
+                    {showCreateModal && (
+                        <CreateWorkspaceModal
+                            open={showCreateModal}
+                            onClose={() => setShowCreateModal(false)}
+                        />
+                    )}
                 </>
             )}
 

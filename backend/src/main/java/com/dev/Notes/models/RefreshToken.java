@@ -7,16 +7,16 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
-@Document(collection = "refreshTokens")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Document(collection = "refreshTokens")
 public class RefreshToken {
     @Id
     private String id;
