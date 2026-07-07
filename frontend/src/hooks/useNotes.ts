@@ -2,10 +2,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as notesApi from "../api/notes";
 import type { NoteRequest, NoteResponse, PagedResponse } from "../types/note";
 
-export const useNotes = (username: string, page: number = 0) =>
+export const useNotes = (
+    username: string,
+    page: number = 0,
+    workspaceId?: string,
+) =>
     useQuery({
-        queryKey: ["notes", username, page],
-        queryFn: () => notesApi.getNotes(username, page),
+        queryKey: ["notes", username, page, workspaceId],
+        queryFn: () => notesApi.getNotes(username, page, 10, workspaceId),
         enabled: !!username,
         placeholderData: (previousData) => previousData,
     });

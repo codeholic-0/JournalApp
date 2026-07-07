@@ -14,6 +14,7 @@ import { useNote, useCreateNote, useUpdateNote } from "../hooks/useNotes";
 import { useMdEditor } from "../hooks/useMdEditor";
 import type { NoteDraft, NoteType } from "../types/note";
 import { useDebouncedCallback } from "../hooks/useDebouncedCallback";
+import { useVaultStore } from "../store/vaultStore";
 
 const schema = z.object({
     title: z.string().min(1, "Title is required"),
@@ -43,9 +44,8 @@ export default function NoteEditor() {
     } = useForm<NoteForm>({ resolver: zodResolver(schema) });
 
     type AutoSaveStatus = "idle" | "saved" | "failed";
-    const [autoSaveStatus, setAutoSaveStatus] = useState<AutoSaveStatus>(
-        "idle",
-    );
+    const [autoSaveStatus, setAutoSaveStatus] =
+        useState<AutoSaveStatus>("idle");
     const [previewMd, setPreviewMd] = useState("");
     const dirtyRef = useRef(false);
     const lastSavedRef = useRef("");
@@ -121,13 +121,14 @@ export default function NoteEditor() {
             return next;
         });
     };
-
+    const currentWorkspaceId = useVaultStore((s) => s.currentWorkspaceId);
     const onSubmit = async (data: NoteForm) => {
         try {
             const payload = {
                 title: data.title,
                 content: getValue(),
                 noteType: (data.noteType as NoteType) || "BASIC",
+                workspaceId: currentWorkspaceId ?? undefined,
             };
             if (isEdit && id) {
                 await updateNote.mutateAsync({ username, id, data: payload });

@@ -5,10 +5,11 @@ export const getNotes = async (
     username: string,
     page: number = 0,
     size: number = 10,
+    workspaceId?: string,
 ): Promise<PagedResponse<NoteResponse>> => {
-    const { data } = await api.get<PagedResponse<NoteResponse>>(
-        `/api/users/${username}/notes?page=${page}&size=${size}`,
-    );
+    let url = `/api/users/${username}/notes?page=${page}&size=${size}`;
+    if (workspaceId) url += `&workspaceId=${workspaceId}`;
+    const { data } = await api.get(url);
     return data;
 };
 

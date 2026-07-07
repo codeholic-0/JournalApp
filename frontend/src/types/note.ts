@@ -17,6 +17,9 @@ export interface NoteRequest {
     favorite?: boolean;
     pinned?: boolean;
     contentJson?: Record<string, unknown> | null;
+    workspaceId?: string;
+    icon?: string;
+    color?: string; 
 }
 
 export interface PageMetadata {

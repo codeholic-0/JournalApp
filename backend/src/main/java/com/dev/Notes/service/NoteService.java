@@ -124,15 +124,19 @@ public class NoteService {
         }
     }
 
-    public Page<NoteResponse> getNotesByUsername(String username, Pageable pageable) {
-        if (userRepository.existsByUsername(username)) {
+    public Page<NoteResponse> getNotesByUsername(String username, String workspaceId, Pageable pageable) {
+        if (!userRepository.existsByUsername(username))
+            throw new ResourceNotFoundException("User not found: " + username);
+
+        if (workspaceId != null) {
             return noteRepository
-                    .findByUsernameAndDeletedAtIsNullOrderByCreatedAtDesc(username, pageable)
+                    .findByUsernameAndWorkspaceIdAndDeletedAtIsNullOrderByCreatedAtDesc(username, workspaceId, pageable)
                     .map(this::toNoteResponse);
-        } else {
-            throw new ResourceNotFoundException(
-                    "User not found with username: " + username);
         }
+
+        return noteRepository
+                .findByUsernameAndDeletedAtIsNullOrderByCreatedAtDesc(username, pageable)
+                .map(this::toNoteResponse);
     }
 
     @Transactional

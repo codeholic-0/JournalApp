@@ -13,6 +13,9 @@ import java.util.List;
 public interface NoteRepository extends MongoRepository<Note, String> {
     Page<Note> findByUsernameAndDeletedAtIsNullOrderByCreatedAtDesc(String username, Pageable pageable);
 
+    Page<Note> findByUsernameAndWorkspaceIdAndDeletedAtIsNullOrderByCreatedAtDesc(String username, String workspaceId,
+            Pageable pageable);
+
     Page<Note> findByUsernameAndDeletedAtIsNotNullOrderByCreatedAtDesc(String username, Pageable pageable);
 
     List<Note> findByWorkspaceId(String workspaceId);

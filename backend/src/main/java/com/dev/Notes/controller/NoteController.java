@@ -60,8 +60,9 @@ public class NoteController {
     @GetMapping
     public ResponseEntity<Page<NoteResponse>> getNotesByUsername(
             @PathVariable String username,
+            @RequestParam(required = false) String workspaceId,
             @PageableDefault(size = 10) Pageable pageable) {
-        var res = noteService.getNotesByUsername(username, pageable);
+        var res = noteService.getNotesByUsername(username, workspaceId, pageable);
         return ResponseEntity.ok(res);
     }
 

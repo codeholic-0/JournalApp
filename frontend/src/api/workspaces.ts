@@ -21,6 +21,11 @@ export const getWorkspace = async (id: string): Promise<WorkspaceResponse> => {
     return data;
 };
 
+export const getInternalWorkspace = async (): Promise<WorkspaceResponse> => {
+    const { data } = await api.get("/api/workspaces/internal");
+    return data;
+};
+
 export const createWorkspace = async (
     body: WorkspaceRequest,
 ): Promise<WorkspaceResponse> => {

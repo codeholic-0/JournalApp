@@ -194,13 +194,14 @@ export default function AppLayout() {
                     >
                         {sidebarContent}
                     </div>
-                    {showCreateModal && (
-                        <CreateWorkspaceModal
-                            open={showCreateModal}
-                            onClose={() => setShowCreateModal(false)}
-                        />
-                    )}
                 </>
+            )}
+
+            {showCreateModal && (
+                <CreateWorkspaceModal
+                    open={showCreateModal}
+                    onClose={() => setShowCreateModal(false)}
+                />
             )}
 
             {/* Main */}

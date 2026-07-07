@@ -23,11 +23,17 @@ import {
     useToggleFavorite,
     useTogglePin,
 } from "../hooks/useNotes";
+import { useVaultStore } from "../store/vaultStore";
 export default function Dashboard() {
     const { user } = useAuth();
     const username = user?.username ?? "";
     const [page, setPage] = useState(0);
-    const { data, isLoading, isError } = useNotes(user?.username ?? "", page);
+    const currentWorkspaceId = useVaultStore((s) => s.currentWorkspaceId);
+    const { data, isLoading, isError } = useNotes(
+        user?.username ?? "",
+        page,
+        currentWorkspaceId ?? undefined,
+    );
     const deleteNote = useDeleteNote();
     const [deleteTarget, setDeleteTarget] = useState<{
         id: string;
