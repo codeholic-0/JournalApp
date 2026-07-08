@@ -21,6 +21,8 @@ export const useNote = (username: string, id: string) =>
         queryKey: ["note", username, id],
         queryFn: () => notesApi.getNote(username, id),
         enabled: !!username && !!id,
+        refetchOnMount: true,
+        staleTime: 0,
     });
 
 export const useCreateNote = () => {

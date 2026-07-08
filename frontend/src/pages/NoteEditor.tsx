@@ -3,12 +3,9 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowLeft, FileText, Loader2, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, FileText, Loader2, Eye } from "lucide-react";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import rehypeSanitize from "rehype-sanitize";
-import rehypeHighlight from "rehype-highlight";
 import { useAuth } from "../hooks/useAuth";
 import { useNote, useCreateNote, useUpdateNote } from "../hooks/useNotes";
 import { useMdEditor } from "../hooks/useMdEditor";
@@ -46,22 +43,15 @@ export default function NoteEditor() {
     type AutoSaveStatus = "idle" | "saved" | "failed";
     const [autoSaveStatus, setAutoSaveStatus] =
         useState<AutoSaveStatus>("idle");
-    const [previewMd, setPreviewMd] = useState("");
     const dirtyRef = useRef(false);
     const lastSavedRef = useRef("");
 
-    const [showPreview, setShowPreview] = useState(
-        () => localStorage.getItem("md-preview") === "true",
-    );
-
     const getDebouncedSaveRef = useRef<() => void>(() => {});
-    const getDebouncedPreviewRef = useRef<(v: string) => void>(() => {});
 
-    const { editorRef, getValue, setValue } = useMdEditor({
-        onDocChange: (value) => {
+    const { editorRef, getValue, setValue, ready } = useMdEditor({
+        onDocChange: () => {
             dirtyRef.current = true;
             getDebouncedSaveRef.current();
-            getDebouncedPreviewRef.current(value);
         },
     });
 
@@ -77,50 +67,35 @@ export default function NoteEditor() {
         setTimeout(() => setAutoSaveStatus("idle"), 3000);
     }, 1500);
 
-    const debouncedPreview = useDebouncedCallback((value: string) => {
-        setPreviewMd(value);
-    }, 250);
-
     useEffect(() => {
         getDebouncedSaveRef.current = debouncedSave;
-        getDebouncedPreviewRef.current = debouncedPreview;
     });
 
-    // Restore draft on mount
+    // Restore draft on mount (create mode only — edit mode always loads from server)
     useEffect(() => {
+        if (isEdit) return;
         const raw = localStorage.getItem(draftKey);
         if (!raw) return;
         try {
             const draft: NoteDraft = JSON.parse(raw);
-            if (!isEdit || !existing) {
-                reset({ title: draft.title });
-                setValue(draft.content);
-            }
+            reset({ title: draft.title });
+            setValue(draft.content);
         } catch {
             /* ignore */
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // Sync when existing note loads (edit mode)
+    // Sync when editor is ready and existing note loads (edit mode)
     useEffect(() => {
-        if (isEdit && existing?.content) {
+        if (isEdit && existing?.content && ready) {
             lastSavedRef.current = existing.content;
-            if (!dirtyRef.current) {
-                setValue(existing.content);
-                reset({ title: existing.title, noteType: existing.noteType });
-            }
+            setValue(existing.content);
+            reset({ title: existing.title, noteType: existing.noteType });
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [existing]);
+    }, [existing, ready]);
 
-    const togglePreview = () => {
-        setShowPreview((p) => {
-            const next = !p;
-            localStorage.setItem("md-preview", String(next));
-            return next;
-        });
-    };
     const currentWorkspaceId = useVaultStore((s) => s.currentWorkspaceId);
     const currentFolderId = useVaultStore((s) => s.currentFolderId);
     const onSubmit = async (data: NoteForm) => {
@@ -160,14 +135,15 @@ export default function NoteEditor() {
                         {isEdit ? "Edit Note" : "New Note"}
                     </h1>
                 </div>
-                <button
-                    type="button"
-                    onClick={togglePreview}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-outline text-sm text-on-surface-muted hover:text-on-surface hover:bg-hover transition-colors"
-                >
-                    {showPreview ? <EyeOff size={16} /> : <Eye size={16} />}
-                    {showPreview ? "Editor only" : "Rendered MD"}
-                </button>
+                {isEdit && (
+                    <Link
+                        to={`/notes/${id}`}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-outline text-sm text-on-surface-muted hover:text-on-surface hover:bg-hover transition-colors"
+                    >
+                        <Eye size={16} />
+                        View
+                    </Link>
+                )}
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -205,37 +181,10 @@ export default function NoteEditor() {
                     </select>
                 </div>
 
-                <div className={showPreview ? "grid grid-cols-2 gap-4" : ""}>
-                    <div
-                        ref={editorRef}
-                        className="min-h-100 border border-outline rounded-lg p-3 focus-within:ring-1 focus-within:ring-primary"
-                    />
-                    {showPreview && (
-                        <div className="prose prose-sm max-w-none border border-outline rounded-lg p-3 overflow-auto min-h-100">
-                            <ReactMarkdown
-                                remarkPlugins={[remarkGfm]}
-                                rehypePlugins={[
-                                    rehypeSanitize,
-                                    [
-                                        rehypeHighlight,
-                                        { detect: true, ignoreMissing: true },
-                                    ],
-                                ]}
-                                components={{
-                                    a: ({ ...props }) => (
-                                        <a
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            {...props}
-                                        />
-                                    ),
-                                }}
-                            >
-                                {previewMd}
-                            </ReactMarkdown>
-                        </div>
-                    )}
-                </div>
+                <div
+                    ref={editorRef}
+                    className="min-h-100 border border-outline rounded-lg p-3 focus-within:ring-1 focus-within:ring-primary"
+                />
 
                 <div className="flex items-center gap-3 pt-2">
                     <div className="flex gap-3">
