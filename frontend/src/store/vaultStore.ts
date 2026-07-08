@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 type WorkspaceSort = "sortOrder" | "name" | "createdAt";
 
@@ -27,40 +28,63 @@ interface VaultState {
     resetSelection: () => void;
 }
 
-export const useVaultStore = create<VaultState>((set) => ({
-    currentFolderId: null,
-    currentWorkspaceId: null,
-    workspaceSort: "sortOrder",
-    expandedFolders: new Set(),
-    selectedTagIds: [],
-    selectedCategoryId: null,
-    selectedCollectionIds: [],
-    selectedNoteIds: [],
-    filters: { pinned: false, favorite: false },
-    bulkMode: false,
-
-    setCurrentWorkspaceId: (id) => set({ currentWorkspaceId: id }),
-    setCurrentFolderId: (id) => set({ currentFolderId: id }),
-    setWorkspaceSort: (sort) => set({ workspaceSort: sort }),
-    toggleFolderExpanded: (id) =>
-        set((state) => {
-            const next = new Set(state.expandedFolders);
-            // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-            next.has(id) ? next.delete(id) : next.add(id);
-            return { expandedFolders: next };
-        }),
-    setSelectedTagIds: (ids) => set({ selectedTagIds: ids }),
-    setSelectedCategoryId: (id) => set({ selectedCategoryId: id }),
-    setSelectedCollectionIds: (ids) => set({ selectedCollectionIds: ids }),
-    setSelectedNoteIds: (ids) => set({ selectedNoteIds: ids }),
-    setFilters: (filters) =>
-        set((state) => ({ filters: { ...state.filters, ...filters } })),
-    setBulkMode: (mode) => set({ bulkMode: mode }),
-    resetSelection: () =>
-        set({
+export const useVaultStore = create<VaultState>()(
+    persist(
+        (set) => ({
+            currentFolderId: null,
+            currentWorkspaceId: null,
+            workspaceSort: "sortOrder",
+            expandedFolders: new Set(),
             selectedTagIds: [],
             selectedCategoryId: null,
             selectedCollectionIds: [],
             selectedNoteIds: [],
+            filters: { pinned: false, favorite: false },
+            bulkMode: false,
+
+            setCurrentWorkspaceId: (id) => set({ currentWorkspaceId: id }),
+            setCurrentFolderId: (id) => set({ currentFolderId: id }),
+            setWorkspaceSort: (sort) => set({ workspaceSort: sort }),
+            toggleFolderExpanded: (id) =>
+                set((state) => {
+                    const next = new Set(state.expandedFolders);
+                    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+                    next.has(id) ? next.delete(id) : next.add(id);
+                    return { expandedFolders: next };
+                }),
+            setSelectedTagIds: (ids) => set({ selectedTagIds: ids }),
+            setSelectedCategoryId: (id) => set({ selectedCategoryId: id }),
+            setSelectedCollectionIds: (ids) =>
+                set({ selectedCollectionIds: ids }),
+            setSelectedNoteIds: (ids) => set({ selectedNoteIds: ids }),
+            setFilters: (filters) =>
+                set((state) => ({ filters: { ...state.filters, ...filters } })),
+            setBulkMode: (mode) => set({ bulkMode: mode }),
+            resetSelection: () =>
+                set({
+                    selectedTagIds: [],
+                    selectedCategoryId: null,
+                    selectedCollectionIds: [],
+                    selectedNoteIds: [],
+                }),
         }),
-}));
+        {
+            name: "vault-storage",
+            partialize: (state) => ({
+                currentWorkspaceId: state.currentWorkspaceId,
+                currentFolderId: state.currentFolderId,
+                expandedFolders: Array.from(state.expandedFolders),
+                workspaceSort: state.workspaceSort,
+            }),
+            merge: (persisted, current) => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const p = persisted as any;
+                return {
+                    ...current,
+                    ...p,
+                    expandedFolders: new Set(p?.expandedFolders ?? []),
+                };
+            },
+        },
+    ),
+);

@@ -11,6 +11,7 @@ import {
     ChevronRight,
     Star,
     Pin,
+    FolderOpen,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../hooks/useAuth";
@@ -30,14 +31,13 @@ export default function Dashboard() {
     const [page, setPage] = useState(0);
     const currentWorkspaceId = useVaultStore((s) => s.currentWorkspaceId);
     const currentFolderId = useVaultStore((s) => s.currentFolderId);
-
     const { data, isLoading, isError } = useNotes(
         user?.username ?? "",
         page,
         currentWorkspaceId ?? undefined,
         currentFolderId ?? undefined,
     );
-    
+
     const deleteNote = useDeleteNote();
     const [deleteTarget, setDeleteTarget] = useState<{
         id: string;
@@ -46,6 +46,18 @@ export default function Dashboard() {
     const [showFavorites, setShowFavorites] = useState(false);
     const toggleFav = useToggleFavorite();
     const togglePin = useTogglePin();
+
+    if (!currentWorkspaceId) {
+        return (
+            <div className="flex flex-col items-center justify-center py-20 space-y-4">
+                <FolderOpen size={48} className="text-on-surface-muted" />
+                <p className="text-on-surface-muted text-sm">
+                    Select a workspace from the sidebar to get started.
+                </p>
+            </div>
+        );
+    }
+
     const notes = data?.content ?? [];
     const displayNotes = showFavorites
         ? notes.filter((n) => n.favorite)

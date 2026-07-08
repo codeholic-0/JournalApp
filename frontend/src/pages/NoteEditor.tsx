@@ -122,6 +122,7 @@ export default function NoteEditor() {
         });
     };
     const currentWorkspaceId = useVaultStore((s) => s.currentWorkspaceId);
+    const currentFolderId = useVaultStore((s) => s.currentFolderId);
     const onSubmit = async (data: NoteForm) => {
         try {
             const payload = {
@@ -129,6 +130,7 @@ export default function NoteEditor() {
                 content: getValue(),
                 noteType: (data.noteType as NoteType) || "BASIC",
                 workspaceId: currentWorkspaceId ?? undefined,
+                folderId: currentFolderId ?? undefined,
             };
             if (isEdit && id) {
                 await updateNote.mutateAsync({ username, id, data: payload });
