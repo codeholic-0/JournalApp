@@ -226,12 +226,17 @@ export default function FolderDialogs({
                             {rootFolders.map((f) => renderFolderOption(f))}
                         </div>
                     </div>
-                    <IconColorPicker
-                        icon={icon}
-                        color={color}
-                        onIconChange={setIcon}
-                        onColorChange={setColor}
-                    />
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-on-surface">
+                            Icon & Color
+                        </label>
+                        <IconColorPicker
+                            icon={icon}
+                            color={color}
+                            onIconChange={setIcon}
+                            onColorChange={setColor}
+                        />
+                    </div>
                     <div className="flex gap-3 pt-2">
                         <button
                             onClick={handleCreate}
@@ -439,7 +444,7 @@ function Modal({
             onClick={onClose}
         >
             <div
-                className="bg-surface-raised rounded-xl border border-outline p-6 max-w-sm w-full space-y-4 shadow-xl animate-scaleIn"
+                className="bg-surface-raised rounded-xl border border-outline p-6 w-full max-w-md mx-auto space-y-4 shadow-xl animate-scaleIn max-h-[90vh] overflow-y-auto"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex items-center justify-between">

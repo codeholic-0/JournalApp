@@ -79,15 +79,47 @@ export default function NoteDetail() {
                 Back
             </Link>
 
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
                     <FileText size={24} className="text-primary shrink-0" />
                     <h1 className="text-2xl font-bold text-on-surface wrap-break-word">
                         {note.title}
                     </h1>
                     <NoteTypeBadge type={note.noteType} />
+                    <div className="flex items-center gap-2 sm:hidden">
+                        <button
+                            onClick={() =>
+                                toggleFav.mutate({ username, id: note.id })
+                            }
+                            className="cursor-pointer"
+                        >
+                            {note.favorite ? (
+                                <Star
+                                    size={18}
+                                    className="text-amber-400 fill-amber-400"
+                                />
+                            ) : (
+                                <Star size={18} />
+                            )}
+                        </button>
+                        <button
+                            onClick={() =>
+                                togglePin.mutate({ username, id: note.id })
+                            }
+                            className="cursor-pointer"
+                        >
+                            {note.pinned ? (
+                                <Pin
+                                    size={18}
+                                    className="text-primary fill-primary"
+                                />
+                            ) : (
+                                <Pin size={18} />
+                            )}
+                        </button>
+                    </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="hidden sm:flex items-center gap-2 shrink-0">
                     <button
                         onClick={() =>
                             toggleFav.mutate({ username, id: note.id })
@@ -121,6 +153,27 @@ export default function NoteDetail() {
                     <Link
                         to={`/notes/${note.id}/edit`}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-outline text-sm text-on-surface-muted hover:text-on-surface hover:bg-hover transition-colors"
+                    >
+                        <Pencil size={14} />
+                        Edit
+                    </Link>
+                    <button
+                        onClick={() =>
+                            setDeleteTarget({
+                                id: note.id,
+                                title: note.title,
+                            })
+                        }
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-outline text-sm text-red-400 hover:text-red-300 hover:bg-hover transition-colors"
+                    >
+                        <Trash2 size={14} />
+                        Delete
+                    </button>
+                </div>
+                <div className="flex sm:hidden items-center gap-2">
+                    <Link
+                        to={`/notes/${note.id}/edit`}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-outline text-sm text-on-surface hover:bg-hover transition-colors"
                     >
                         <Pencil size={14} />
                         Edit

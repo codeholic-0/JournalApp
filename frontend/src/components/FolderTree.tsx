@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import {
     ChevronRight,
     ChevronDown,
@@ -18,6 +19,11 @@ import type { FolderResponse } from "../types/folder";
 
 type Mode = "create" | "rename" | "move" | "restyle" | "delete" | null;
 
+interface MenuState {
+    folder: FolderResponse;
+    buttonRect: DOMRect;
+}
+
 export default function FolderTree() {
     const workspaceId = useVaultStore((s) => s.currentWorkspaceId);
     const currentFolderId = useVaultStore((s) => s.currentFolderId);
@@ -32,7 +38,7 @@ export default function FolderTree() {
     const [dialogTarget, setDialogTarget] = useState<FolderResponse | null>(
         null,
     );
-    const [menuFolder, setMenuFolder] = useState<string | null>(null);
+    const [menuState, setMenuState] = useState<MenuState | null>(null);
 
     if (!workspaceId) return null;
 
@@ -41,7 +47,7 @@ export default function FolderTree() {
     const openDialog = (mode: Mode, target: FolderResponse | null = null) => {
         setDialogMode(mode);
         setDialogTarget(target);
-        setMenuFolder(null);
+        setMenuState(null);
     };
 
     const closeDialog = () => {
@@ -49,13 +55,18 @@ export default function FolderTree() {
         setDialogTarget(null);
     };
 
+    const openMenu = (e: React.MouseEvent, folder: FolderResponse) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        setMenuState({ folder, buttonRect: rect });
+    };
+
     const renderFolder = (folder: FolderResponse, depth: number = 0) => {
         const children = folders?.filter((f) => f.parentId === folder.id) ?? [];
         const isExpanded = expandedFolders.has(folder.id);
-        const showMenu = menuFolder === folder.id;
+        const showMenu = menuState?.folder.id === folder.id;
         return (
             <div key={folder.id}>
-                <div className="group relative flex items-center">
+                <div className="group flex items-center">
                     <button
                         onClick={() => {
                             setCurrentFolderId(
@@ -69,7 +80,7 @@ export default function FolderTree() {
                                 ? "bg-primary/10 text-primary"
                                 : ""
                         }`}
-                        style={{ paddingLeft: `${12 + depth * 16}px` }}
+                        style={{ paddingLeft: `${12 + Math.min(depth, 3) * 16}px` }}
                     >
                         {children.length > 0 ? (
                             <span
@@ -93,53 +104,17 @@ export default function FolderTree() {
                         />
                         <span className="truncate">{folder.name}</span>
                     </button>
-                    <div
-                        className={`absolute right-2 top-1/2 -translate-y-1/2 transition-opacity ${
-                            showMenu ? "z-20" : ""
-                        } opacity-80 group-hover:opacity-100`}
-                    >
+                    <div className="shrink-0 px-1">
                         <button
-                            onClick={() =>
-                                setMenuFolder(showMenu ? null : folder.id)
+                            onClick={(e) =>
+                                showMenu
+                                    ? setMenuState(null)
+                                    : openMenu(e, folder)
                             }
                             className="p-1 rounded-md text-on-surface-muted hover:bg-hover"
                         >
                             <MoreHorizontal size={14} />
                         </button>
-                        {showMenu && (
-                            <div
-                                className="absolute right-0 top-full mt-1 z-20 w-40 bg-surface-raised border border-outline rounded-lg shadow-xl py-1 animate-fadeIn"
-                                onClick={(e) => e.stopPropagation()}
-                            >
-                                <button
-                                    onClick={() => openDialog("rename", folder)}
-                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-on-surface hover:bg-hover transition-colors"
-                                >
-                                    <Pencil size={14} /> Rename
-                                </button>
-                                <button
-                                    onClick={() => openDialog("move", folder)}
-                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-on-surface hover:bg-hover transition-colors"
-                                >
-                                    <ArrowRight size={14} /> Move
-                                </button>
-                                <button
-                                    onClick={() =>
-                                        openDialog("restyle", folder)
-                                    }
-                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-on-surface hover:bg-hover transition-colors"
-                                >
-                                    <Palette size={14} /> Icon & Color
-                                </button>
-                                <hr className="border-outline my-1" />
-                                <button
-                                    onClick={() => openDialog("delete", folder)}
-                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-400 hover:bg-red-600/10 transition-colors"
-                                >
-                                    <Trash2 size={14} /> Delete
-                                </button>
-                            </div>
-                        )}
                     </div>
                 </div>
                 {isExpanded &&
@@ -176,21 +151,70 @@ export default function FolderTree() {
             </button>
             {rootFolders.map((f) => renderFolder(f))}
 
-            {/* Dialogs */}
-            <FolderDialogs
-                workspaceId={workspaceId}
-                folders={folders ?? []}
-                mode={dialogMode}
-                target={dialogTarget}
-                onClose={closeDialog}
-            />
+            {/* Dialogs - portal to body to avoid CSS containment issues from sidebar */}
+            {dialogMode &&
+                createPortal(
+                    <FolderDialogs
+                        workspaceId={workspaceId}
+                        folders={folders ?? []}
+                        mode={dialogMode}
+                        target={dialogTarget}
+                        onClose={closeDialog}
+                    />,
+                    document.body,
+                )}
 
-            {/* Click outside to close menu */}
-            {menuFolder && (
-                <div
-                    className="fixed inset-0 z-10"
-                    onClick={() => setMenuFolder(null)}
-                />
+            {/* Context menu portal */}
+            {menuState && (
+                <>
+                    <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setMenuState(null)}
+                    />
+                    <div
+                        className="fixed z-50 min-w-40 bg-surface-raised border border-outline rounded-lg shadow-xl py-1 animate-fadeIn"
+                        style={{
+                            left: Math.min(
+                                menuState.buttonRect.left,
+                                window.innerWidth - 176,
+                            ),
+                            top: menuState.buttonRect.bottom + 4,
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <button
+                            onClick={() =>
+                                openDialog("rename", menuState.folder)
+                            }
+                            className="flex items-center gap-2 w-full px-3 py-2 text-sm text-on-surface hover:bg-hover transition-colors"
+                        >
+                            <Pencil size={14} /> Rename
+                        </button>
+                        <button
+                            onClick={() => openDialog("move", menuState.folder)}
+                            className="flex items-center gap-2 w-full px-3 py-2 text-sm text-on-surface hover:bg-hover transition-colors"
+                        >
+                            <ArrowRight size={14} /> Move
+                        </button>
+                        <button
+                            onClick={() =>
+                                openDialog("restyle", menuState.folder)
+                            }
+                            className="flex items-center gap-2 w-full px-3 py-2 text-sm text-on-surface hover:bg-hover transition-colors"
+                        >
+                            <Palette size={14} /> Icon & Color
+                        </button>
+                        <hr className="border-outline my-1" />
+                        <button
+                            onClick={() =>
+                                openDialog("delete", menuState.folder)
+                            }
+                            className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-400 hover:bg-red-600/10 transition-colors"
+                        >
+                            <Trash2 size={14} /> Delete
+                        </button>
+                    </div>
+                </>
             )}
         </div>
     );

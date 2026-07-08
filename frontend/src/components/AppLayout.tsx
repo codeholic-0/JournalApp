@@ -65,8 +65,8 @@ export default function AppLayout() {
 
     const sidebarContent = (
         <aside
-            className={`fixed inset-y-0 left-0 z-40 flex flex-col border-r border-outline bg-surface-alt transition-all duration-300 ${
-                collapsed ? "w-16" : "w-64"
+            className={`fixed inset-y-0 left-0 z-40 flex flex-col border-r border-outline bg-surface-alt overflow-y-auto transition-all duration-300 ${
+                collapsed ? "w-16" : "w-64 max-lg:w-72 max-lg:max-w-[85vw]"
             }`}
         >
             {/* Workspace header */}
@@ -173,11 +173,13 @@ export default function AppLayout() {
         <div className="min-h-screen bg-surface">
             {/* Mobile hamburger */}
             <button
-                className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-surface-alt border border-outline text-on-surface shadow-sm"
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                aria-label="Toggle sidebar"
+                className={`lg:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-surface-alt border border-outline text-on-surface shadow-sm transition-opacity duration-200 ${
+                    sidebarOpen ? "opacity-0 pointer-events-none" : "opacity-100"
+                }`}
+                onClick={() => setSidebarOpen(true)}
+                aria-label="Open sidebar"
             >
-                {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+                <Menu size={20} />
             </button>
 
             {/* Desktop sidebar */}
@@ -189,12 +191,19 @@ export default function AppLayout() {
                     <div
                         className="fixed inset-0 bg-black/50 backdrop-blur-sm z-30 lg:hidden"
                         onClick={() => setSidebarOpen(false)}
-                    />
-                    <div
-                        className={`lg:hidden fixed inset-y-0 left-0 z-40 transition-transform duration-300 ease-out ${
-                            sidebarOpen ? "translate-x-0" : "-translate-x-full"
-                        }`}
                     >
+                        <button
+                            className="absolute top-4 right-4 p-2 rounded-lg bg-surface-alt border border-outline text-on-surface shadow-sm"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setSidebarOpen(false);
+                            }}
+                            aria-label="Close sidebar"
+                        >
+                            <X size={20} />
+                        </button>
+                    </div>
+                    <div className="lg:hidden fixed inset-y-0 left-0 z-40 transition-transform duration-300 ease-out translate-x-0">
                         {sidebarContent}
                     </div>
                 </>

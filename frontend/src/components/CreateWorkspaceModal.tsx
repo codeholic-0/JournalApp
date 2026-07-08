@@ -57,7 +57,7 @@ export default function CreateWorkspaceModal({ open, onClose }: Props) {
             onClick={onClose}
         >
             <div
-                className="bg-surface-raised rounded-xl border border-outline p-6 max-w-sm w-full space-y-5 shadow-xl animate-scaleIn"
+                className="bg-surface-raised rounded-xl border border-outline p-6 w-full max-w-md mx-auto space-y-5 shadow-xl animate-scaleIn max-h-[90vh] overflow-y-auto"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex items-center justify-between">
