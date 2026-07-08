@@ -5,6 +5,7 @@ describe("vaultStore", () => {
     beforeEach(() => {
         useVaultStore.setState({
             currentWorkspaceId: null,
+            currentFolderId: null,
             workspaceSort: "sortOrder",
             expandedFolders: new Set(),
             selectedTagIds: [],
@@ -32,6 +33,21 @@ describe("vaultStore", () => {
     it("should set currentWorkspaceId to null", () => {
         useVaultStore.getState().setCurrentWorkspaceId(null);
         expect(useVaultStore.getState().currentWorkspaceId).toBeNull();
+    });
+
+    it("should initialize currentFolderId as null", () => {
+        expect(useVaultStore.getState().currentFolderId).toBeNull();
+    });
+
+    it("should set currentFolderId", () => {
+        useVaultStore.getState().setCurrentFolderId("f-1");
+        expect(useVaultStore.getState().currentFolderId).toBe("f-1");
+    });
+
+    it("should set currentFolderId to null", () => {
+        useVaultStore.getState().setCurrentFolderId("f-1");
+        useVaultStore.getState().setCurrentFolderId(null);
+        expect(useVaultStore.getState().currentFolderId).toBeNull();
     });
 
     it("should update workspaceSort", () => {

@@ -6,9 +6,11 @@ export const getNotes = async (
     page: number = 0,
     size: number = 10,
     workspaceId?: string,
+    folderId?: string,
 ): Promise<PagedResponse<NoteResponse>> => {
     let url = `/api/users/${username}/notes?page=${page}&size=${size}`;
     if (workspaceId) url += `&workspaceId=${workspaceId}`;
+    if (folderId) url += `&folderId=${folderId}`;
     const { data } = await api.get(url);
     return data;
 };

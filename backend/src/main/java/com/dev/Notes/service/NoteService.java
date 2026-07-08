@@ -50,6 +50,7 @@ public class NoteService {
         Note note = new Note();
         note.setTitle(req.getTitle());
         note.setContent(req.getContent());
+        note.setFolderId(req.getFolderId());
         note.setNoteType(req.getNoteType() != null ? req.getNoteType() : NoteType.BASIC);
         if (req.getContentJson() != null) {
             note.setContentJson(req.getContentJson());
@@ -70,6 +71,7 @@ public class NoteService {
         res.setCreatedAt(note.getCreatedAt());
         res.setUpdatedAt(note.getUpdatedAt());
         res.setDeletedAt(note.getDeletedAt());
+        res.setFolderId(note.getFolderId());
         return res;
     }
 
@@ -84,6 +86,7 @@ public class NoteService {
         note.setWorkspaceId(req.getWorkspaceId() != null
                 ? req.getWorkspaceId()
                 : workspaceService.getOrCreateInternalWorkspace(username).getId());
+        note.setFolderId(req.getFolderId());
         noteRepository.save(note);
         user.getNoteIds().add(note.getId());
         userRepository.save(user);
@@ -139,6 +142,23 @@ public class NoteService {
                 .map(this::toNoteResponse);
     }
 
+    public Page<NoteResponse> getNotesByUsername(String username, String workspaceId, String folderId,
+            Pageable pageable) {
+        if (!userRepository.existsByUsername(username))
+            throw new ResourceNotFoundException("User not found: " + username);
+
+        if (workspaceId != null) {
+            return noteRepository
+                    .findByUsernameAndWorkspaceIdAndFolderIdAndDeletedAtIsNullOrderByCreatedAtDesc(username,
+                            workspaceId, folderId, pageable)
+                    .map(this::toNoteResponse);
+        }
+
+        return noteRepository
+                .findByUsernameAndDeletedAtIsNullOrderByCreatedAtDesc(username, pageable)
+                .map(this::toNoteResponse);
+    }
+
     @Transactional
     public NoteResponse updateNote(
             String username,
@@ -155,6 +175,8 @@ public class NoteService {
                 note.setContent(updates.getContent());
             if (updates.getNoteType() != null)
                 note.setNoteType(updates.getNoteType());
+            if (updates.getFolderId() != null)
+                note.setFolderId(updates.getFolderId());
             if (updates.getContentJson() != null)
                 note.setContentJson(updates.getContentJson());
             noteRepository.save(note);

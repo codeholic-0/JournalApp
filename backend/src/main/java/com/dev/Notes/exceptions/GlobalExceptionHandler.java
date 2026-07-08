@@ -110,6 +110,24 @@ public class GlobalExceptionHandler {
                                                 LocalDateTime.now()));
         }
 
+        @ExceptionHandler(FolderConflictException.class)
+        public ResponseEntity<ErrorResponse> handleFolderConflict(FolderConflictException ex) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(
+                                new ErrorResponse(
+                                                ex.getMessage(),
+                                                HttpStatus.CONFLICT,
+                                                LocalDateTime.now()));
+        }
+
+        @ExceptionHandler(FolderNotEmptyException.class)
+        public ResponseEntity<ErrorResponse> handleFolderNotEmpty(FolderNotEmptyException ex) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(
+                                new ErrorResponse(
+                                                ex.getMessage(),
+                                                HttpStatus.CONFLICT,
+                                                LocalDateTime.now()));
+        }
+
         @ExceptionHandler(Exception.class)
         public ResponseEntity<ErrorResponse> handleGeneric(Exception ex) {
                 log.error("Unexpected Error Occurred!", ex);

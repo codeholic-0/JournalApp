@@ -24,6 +24,7 @@ public class NoteRequest {
     private NoteType noteType;
     private Map<String, Object> contentJson;
     private String workspaceId;
+    private String folderId;
     private String icon;
     private String color;
 }

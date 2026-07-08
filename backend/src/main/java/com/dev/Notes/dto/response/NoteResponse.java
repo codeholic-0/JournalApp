@@ -27,6 +27,7 @@ public class NoteResponse {
     private boolean favorite = false;
     private boolean pinned = false;
     private String workspaceId;
+    private String folderId;
     private String icon;
     private String color;
 }

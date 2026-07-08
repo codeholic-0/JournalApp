@@ -4,6 +4,7 @@ type WorkspaceSort = "sortOrder" | "name" | "createdAt";
 
 interface VaultState {
     currentWorkspaceId: string | null;
+    currentFolderId: string | null;
     workspaceSort: WorkspaceSort;
     expandedFolders: Set<string>;
     selectedTagIds: string[];
@@ -13,6 +14,7 @@ interface VaultState {
     filters: { pinned: boolean; favorite: boolean };
     bulkMode: boolean;
 
+    setCurrentFolderId: (id: string | null) => void;
     setCurrentWorkspaceId: (id: string | null) => void;
     setWorkspaceSort: (sort: WorkspaceSort) => void;
     toggleFolderExpanded: (id: string) => void;
@@ -26,6 +28,7 @@ interface VaultState {
 }
 
 export const useVaultStore = create<VaultState>((set) => ({
+    currentFolderId: null,
     currentWorkspaceId: null,
     workspaceSort: "sortOrder",
     expandedFolders: new Set(),
@@ -37,6 +40,7 @@ export const useVaultStore = create<VaultState>((set) => ({
     bulkMode: false,
 
     setCurrentWorkspaceId: (id) => set({ currentWorkspaceId: id }),
+    setCurrentFolderId: (id) => set({ currentFolderId: id }),
     setWorkspaceSort: (sort) => set({ workspaceSort: sort }),
     toggleFolderExpanded: (id) =>
         set((state) => {

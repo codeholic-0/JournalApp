@@ -18,6 +18,7 @@ import { useTheme } from "../hooks/useTheme";
 import WorkspaceSwitcher from "./WorkspaceSwitcher";
 import SortSelector from "./SortSelector";
 import CreateWorkspaceModal from "./CreateWorkspaceModal";
+import FolderTree from "./FolderTree";
 
 const navItems = [
     { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
@@ -105,6 +106,8 @@ export default function AppLayout() {
                         {!collapsed && <span>{item.label}</span>}
                     </NavLink>
                 ))}
+
+                {!collapsed && <FolderTree />}
 
                 {!collapsed && (
                     <div className="pt-3 pb-1 text-xs font-medium text-on-surface-muted px-3">

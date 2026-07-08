@@ -6,10 +6,12 @@ export const useNotes = (
     username: string,
     page: number = 0,
     workspaceId?: string,
+    folderId?: string,
 ) =>
     useQuery({
-        queryKey: ["notes", username, page, workspaceId],
-        queryFn: () => notesApi.getNotes(username, page, 10, workspaceId),
+        queryKey: ["notes", username, page, workspaceId, folderId],
+        queryFn: () =>
+            notesApi.getNotes(username, page, 10, workspaceId, folderId),
         enabled: !!username,
         placeholderData: (previousData) => previousData,
     });

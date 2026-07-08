@@ -11,20 +11,24 @@ import com.dev.Notes.models.Note;
 import java.util.List;
 
 public interface NoteRepository extends MongoRepository<Note, String> {
-    Page<Note> findByUsernameAndDeletedAtIsNullOrderByCreatedAtDesc(String username, Pageable pageable);
+        Page<Note> findByUsernameAndDeletedAtIsNullOrderByCreatedAtDesc(String username, Pageable pageable);
 
-    Page<Note> findByUsernameAndWorkspaceIdAndDeletedAtIsNullOrderByCreatedAtDesc(String username, String workspaceId,
-            Pageable pageable);
+        Page<Note> findByUsernameAndWorkspaceIdAndDeletedAtIsNullOrderByCreatedAtDesc(String username,
+                        String workspaceId,
+                        Pageable pageable);
 
-    Page<Note> findByUsernameAndDeletedAtIsNotNullOrderByCreatedAtDesc(String username, Pageable pageable);
+        Page<Note> findByUsernameAndWorkspaceIdAndFolderIdAndDeletedAtIsNullOrderByCreatedAtDesc(String username,
+                        String workspaceId, String folderId, Pageable pageable);
 
-    List<Note> findByWorkspaceId(String workspaceId);
+        Page<Note> findByUsernameAndDeletedAtIsNotNullOrderByCreatedAtDesc(String username, Pageable pageable);
 
-    void deleteByWorkspaceId(String workspaceId);
+        List<Note> findByWorkspaceId(String workspaceId);
 
-    @Aggregation(pipeline = {
-            "{ $match: { workspaceId: ?0, deletedAt: null } }",
-            "{ $group: { _id: null, total: { $sum: { $bsonSize: \"$content\" } }, count: { $sum: 1 } } }"
-    })
-    List<WorkspaceSizeResult> aggregateWorkspaceSize(String workspaceId);
+        void deleteByWorkspaceId(String workspaceId);
+
+        @Aggregation(pipeline = {
+                        "{ $match: { workspaceId: ?0, deletedAt: null } }",
+                        "{ $group: { _id: null, total: { $sum: { $bsonSize: \"$content\" } }, count: { $sum: 1 } } }"
+        })
+        List<WorkspaceSizeResult> aggregateWorkspaceSize(String workspaceId);
 }
