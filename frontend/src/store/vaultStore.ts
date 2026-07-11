@@ -14,6 +14,8 @@ interface VaultState {
     selectedNoteIds: string[];
     filters: { pinned: boolean; favorite: boolean };
     bulkMode: boolean;
+    sidebarWidth: number;
+    sectionCollapse: Record<string, boolean>;
 
     setCurrentFolderId: (id: string | null) => void;
     setCurrentWorkspaceId: (id: string | null) => void;
@@ -26,6 +28,19 @@ interface VaultState {
     setFilters: (filters: Partial<VaultState["filters"]>) => void;
     setBulkMode: (mode: boolean) => void;
     resetSelection: () => void;
+    setSidebarWidth: (width: number) => void;
+    toggleSection: (section: string) => void;
+}
+
+function getInitialSidebarWidth(): number {
+    if (typeof window === "undefined") return 256;
+    try {
+        const old = localStorage.getItem("sidebar-collapsed");
+        if (old === "true") return 64;
+    } catch {
+        /* noop */
+    }
+    return 256;
 }
 
 export const useVaultStore = create<VaultState>()(
@@ -41,6 +56,8 @@ export const useVaultStore = create<VaultState>()(
             selectedNoteIds: [],
             filters: { pinned: false, favorite: false },
             bulkMode: false,
+            sidebarWidth: getInitialSidebarWidth(),
+            sectionCollapse: {},
 
             setCurrentWorkspaceId: (id) => set({ currentWorkspaceId: id }),
             setCurrentFolderId: (id) => set({ currentFolderId: id }),
@@ -58,7 +75,9 @@ export const useVaultStore = create<VaultState>()(
                 set({ selectedCollectionIds: ids }),
             setSelectedNoteIds: (ids) => set({ selectedNoteIds: ids }),
             setFilters: (filters) =>
-                set((state) => ({ filters: { ...state.filters, ...filters } })),
+                set((state) => ({
+                    filters: { ...state.filters, ...filters },
+                })),
             setBulkMode: (mode) => set({ bulkMode: mode }),
             resetSelection: () =>
                 set({
@@ -67,6 +86,14 @@ export const useVaultStore = create<VaultState>()(
                     selectedCollectionIds: [],
                     selectedNoteIds: [],
                 }),
+            setSidebarWidth: (width) => set({ sidebarWidth: width }),
+            toggleSection: (section) =>
+                set((state) => ({
+                    sectionCollapse: {
+                        ...state.sectionCollapse,
+                        [section]: !state.sectionCollapse[section],
+                    },
+                })),
         }),
         {
             name: "vault-storage",
@@ -75,6 +102,8 @@ export const useVaultStore = create<VaultState>()(
                 currentFolderId: state.currentFolderId,
                 expandedFolders: Array.from(state.expandedFolders),
                 workspaceSort: state.workspaceSort,
+                sidebarWidth: state.sidebarWidth,
+                sectionCollapse: state.sectionCollapse,
             }),
             merge: (persisted, current) => {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any

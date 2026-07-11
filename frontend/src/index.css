@@ -186,3 +186,13 @@ html {
 button {
     cursor: pointer;
 }
+
+main {
+    margin-left: var(--sidebar-offset, 0px);
+}
+
+@media (width < 1024px) {
+    main {
+        margin-left: 0;
+    }
+}

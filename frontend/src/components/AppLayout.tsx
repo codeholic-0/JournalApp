@@ -1,24 +1,21 @@
-import { useState } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { NavLink, Outlet } from "react-router-dom";
 import {
     LayoutDashboard,
     FilePlus2,
-    Settings,
-    Moon,
-    Sun,
-    LogOut,
+    UserCircle,
     Menu,
     X,
     PanelLeftOpen,
-    UserCircle,
     Trash2,
+    ChevronDown,
 } from "lucide-react";
-import { useAuth } from "../hooks/useAuth";
-import { useAppearance } from "../hooks/useAppearance";
 import WorkspaceSwitcher from "./WorkspaceSwitcher";
 import SortSelector from "./SortSelector";
 import CreateWorkspaceModal from "./CreateWorkspaceModal";
 import FolderTree from "./FolderTree";
+import { useAuth } from "../hooks/useAuth";
+import { useVaultStore } from "../store/vaultStore";
 
 const navItems = [
     { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
@@ -28,33 +25,104 @@ const navItems = [
 
 const accountItem = {
     to: "/account",
-    label: "Settings",
-    icon: Settings,
     end: false,
 };
 
+function SectionDivider({
+    label,
+    section,
+    collapsed,
+    children,
+}: {
+    label: string;
+    section: string;
+    collapsed: boolean;
+    children: React.ReactNode;
+}) {
+    const isCollapsed = useVaultStore(
+        (s) => s.sectionCollapse[section] ?? false,
+    );
+    const toggle = useVaultStore((s) => s.toggleSection);
+
+    if (collapsed) return null;
+
+    return (
+        <div>
+            <button
+                onClick={() => toggle(section)}
+                className="flex items-center gap-2 w-full px-3 py-1.5 text-xs font-semibold text-on-surface-muted hover:text-on-surface transition-colors"
+            >
+                <ChevronDown
+                    size={14}
+                    className={`transition-transform duration-200 ${
+                        isCollapsed ? "-rotate-90" : ""
+                    }`}
+                />
+                {label}
+            </button>
+            <div
+                className={`grid transition-[grid-template-rows] duration-200 ${
+                    isCollapsed ? "grid-rows-[0fr]" : "grid-rows-[1fr]"
+                }`}
+            >
+                <div className={isCollapsed ? "overflow-hidden" : ""}>{children}</div>
+            </div>
+        </div>
+    );
+}
+
 export default function AppLayout() {
-    const { user, logout } = useAuth();
-    const { theme, setTheme } = useAppearance(user?.username);
-    const navigate = useNavigate();
+    const { user } = useAuth();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
-    const [collapsed, setCollapsed] = useState(() => {
-        if (typeof window === "undefined") return false;
-        return localStorage.getItem("sidebar-collapsed") === "true";
-    });
+    const [isDragging, setIsDragging] = useState(false);
 
-    const toggleCollapsed = () => {
-        setCollapsed((prev) => {
-            localStorage.setItem("sidebar-collapsed", String(!prev));
-            return !prev;
-        });
-    };
+    const sidebarWidth = useVaultStore((s) => s.sidebarWidth);
+    const setSidebarWidth = useVaultStore((s) => s.setSidebarWidth);
+    const collapsed = sidebarWidth <= 80;
+    const dragRef = useRef<HTMLDivElement>(null);
 
-    const handleLogout = async () => {
-        await logout();
-        navigate("/login");
-    };
+    const toggleCollapsed = useCallback(() => {
+        setSidebarWidth(collapsed ? 256 : 64);
+    }, [collapsed, setSidebarWidth]);
+
+    useEffect(() => {
+        const el = dragRef.current;
+        if (!el || collapsed) return;
+
+        let startX = 0;
+        let startWidth = 0;
+
+        const onMouseDown = (e: MouseEvent) => {
+            startX = e.clientX;
+            startWidth = sidebarWidth;
+            setIsDragging(true);
+            document.addEventListener("mousemove", onMouseMove);
+            document.addEventListener("mouseup", onMouseUp);
+            document.body.style.cursor = "col-resize";
+            document.body.style.userSelect = "none";
+        };
+
+        const onMouseMove = (e: MouseEvent) => {
+            const delta = e.clientX - startX;
+            setSidebarWidth(Math.min(400, Math.max(64, startWidth + delta)));
+        };
+
+        const onMouseUp = () => {
+            setIsDragging(false);
+            document.removeEventListener("mousemove", onMouseMove);
+            document.removeEventListener("mouseup", onMouseUp);
+            document.body.style.cursor = "";
+            document.body.style.userSelect = "";
+        };
+
+        el.addEventListener("mousedown", onMouseDown);
+        return () => {
+            el.removeEventListener("mousedown", onMouseDown);
+            document.removeEventListener("mousemove", onMouseMove);
+            document.removeEventListener("mouseup", onMouseUp);
+        };
+    }, [collapsed, sidebarWidth, setSidebarWidth]);
 
     const linkClass = ({ isActive }: { isActive: boolean }) =>
         `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
@@ -63,17 +131,13 @@ export default function AppLayout() {
                 : "text-on-surface-muted hover:bg-hover hover:text-on-surface"
         } ${collapsed ? "justify-center px-2" : ""}`;
 
-    const sidebarContent = (
-        <aside
-            className={`fixed inset-y-0 left-0 z-40 flex flex-col border-r border-outline bg-surface-alt overflow-y-auto transition-all duration-300 ${
-                collapsed ? "w-16" : "w-64 max-lg:w-72 max-lg:max-w-[85vw]"
-            }`}
-        >
-            {/* Workspace header */}
+    const sidebarInner = (
+        <>
+            {/* Collapse/Expand button (only shown when collapsed) */}
             <div
                 className={`border-b border-outline ${collapsed ? "p-3" : ""}`}
             >
-                {collapsed ? (
+                {collapsed && (
                     <button
                         onClick={toggleCollapsed}
                         className="w-full p-1.5 rounded-md text-on-surface-muted hover:bg-hover hover:text-on-surface transition-colors"
@@ -81,15 +145,20 @@ export default function AppLayout() {
                     >
                         <PanelLeftOpen size={18} className="mx-auto" />
                     </button>
-                ) : (
-                    <div>
-                        <WorkspaceSwitcher
-                            onNewWorkspace={() => setShowCreateModal(true)}
-                        />
-                        <SortSelector />
-                    </div>
                 )}
             </div>
+
+            {/* Workspaces section */}
+            <SectionDivider
+                label="Workspaces"
+                section="workspaces"
+                collapsed={collapsed}
+            >
+                <WorkspaceSwitcher
+                    onNewWorkspace={() => setShowCreateModal(true)}
+                />
+                <SortSelector />
+            </SectionDivider>
 
             {/* Primary nav */}
             <nav className="flex-1 p-2 space-y-1">
@@ -107,60 +176,28 @@ export default function AppLayout() {
                     </NavLink>
                 ))}
 
-                {!collapsed && <FolderTree />}
+                <SectionDivider
+                    label="Folders"
+                    section="folders"
+                    collapsed={collapsed}
+                >
+                    <FolderTree />
+                </SectionDivider>
+            </nav>
 
-                {!collapsed && (
-                    <div className="pt-3 pb-1 text-xs font-medium text-on-surface-muted px-3">
-                        Account
-                    </div>
-                )}
-
+            {/* Account link */}
+            <div className="border-t border-outline p-2">
                 <NavLink
                     to={accountItem.to}
                     end={accountItem.end}
                     onClick={() => setSidebarOpen(false)}
                     className={linkClass}
-                    title={collapsed ? accountItem.label : undefined}
                 >
-                    <accountItem.icon size={18} />
-                    {!collapsed && <span>{accountItem.label}</span>}
+                    <UserCircle size={18} />
+                    {!collapsed && <span>{user?.username ?? "Account"}</span>}
                 </NavLink>
-            </nav>
-
-            {/* Bottom */}
-            <div className="border-t border-outline p-2 space-y-1">
-                <button
-                    onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                    className={`flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm text-on-surface-muted hover:bg-hover hover:text-on-surface transition-colors ${
-                        collapsed ? "justify-center px-2" : ""
-                    }`}
-                    title={collapsed ? (theme === "dark" ? "Light mode" : "Dark mode") : undefined}
-                >
-                    {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
-                    {!collapsed && (
-                        <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>
-                    )}
-                </button>
-
-                {!collapsed && (
-                    <div className="flex items-center gap-2 px-3 py-2 text-sm text-on-surface-muted truncate">
-                        <UserCircle size={16} />
-                        <span className="truncate">{user?.username}</span>
-                    </div>
-                )}
-
-                <button
-                    onClick={handleLogout}
-                    className={`flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm text-on-surface-muted hover:bg-hover hover:text-red-400 transition-colors ${
-                        collapsed ? "justify-center px-2" : ""
-                    }`}
-                    title={collapsed ? "Logout" : undefined}
-                >
-                    <LogOut size={18} />
-                    {!collapsed && <span>Logout</span>}
-                </button>
             </div>
-        </aside>
+        </>
     );
 
     return (
@@ -179,7 +216,22 @@ export default function AppLayout() {
             </button>
 
             {/* Desktop sidebar */}
-            <div className="hidden lg:block">{sidebarContent}</div>
+            <div className="hidden lg:block">
+                <aside
+                    className={`fixed inset-y-0 left-0 z-40 flex flex-col border-r border-outline bg-surface-alt overflow-y-auto transition-[width] duration-300 max-lg:max-w-[85vw] ${
+                        collapsed ? "overflow-hidden" : ""
+                    } ${isDragging ? "transition-none" : ""}`}
+                    style={{ width: collapsed ? 64 : sidebarWidth }}
+                >
+                    {sidebarInner}
+                    {!collapsed && (
+                        <div
+                            ref={dragRef}
+                            className="absolute right-0 inset-y-0 w-1.5 cursor-col-resize z-10 hover:bg-primary/30 active:bg-primary/50 transition-colors"
+                        />
+                    )}
+                </aside>
+            </div>
 
             {/* Mobile sidebar overlay */}
             {sidebarOpen && (
@@ -200,7 +252,9 @@ export default function AppLayout() {
                         </button>
                     </div>
                     <div className="lg:hidden fixed inset-y-0 left-0 z-40 transition-transform duration-300 ease-out translate-x-0">
-                        {sidebarContent}
+                        <aside className="w-72 max-w-[85vw] flex flex-col h-full border-r border-outline bg-surface-alt overflow-y-auto">
+                            {sidebarInner}
+                        </aside>
                     </div>
                 </>
             )}
@@ -214,9 +268,14 @@ export default function AppLayout() {
 
             {/* Main */}
             <main
-                className={`transition-all duration-300 p-6 pt-16 lg:pt-6 ${
-                    collapsed ? "lg:ml-16" : "lg:ml-64"
-                } animate-fadeIn`}
+                className="transition-all duration-300 p-6 pt-16 lg:pt-6 animate-fadeIn"
+                style={
+                    {
+                        "--sidebar-offset": collapsed
+                            ? "64px"
+                            : `${Math.min(sidebarWidth, 400)}px`,
+                    } as React.CSSProperties
+                }
             >
                 <Outlet />
             </main>

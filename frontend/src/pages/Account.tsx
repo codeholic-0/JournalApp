@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Lock, Loader2, Trash2, AlertTriangle, X } from "lucide-react";
+import { Lock, Loader2, LogOut, Trash2, AlertTriangle, X } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../hooks/useAuth";
 import { useUpdatePassword, useDeleteUser } from "../hooks/useUser";
@@ -232,6 +232,20 @@ export default function Account() {
                         ))}
                     </div>
                 </div>
+            </div>
+
+            {/* Logout */}
+            <div className="pt-4 border-b border-outline pb-4 space-y-3">
+                <button
+                    onClick={async () => {
+                        await logout();
+                        navigate("/login");
+                    }}
+                    className="flex items-center gap-2 px-6 py-2 rounded-lg border border-outline text-sm text-on-surface-muted hover:bg-hover hover:text-red-400 transition-colors active:scale-[0.98]"
+                >
+                    <LogOut size={14} />
+                    Logout
+                </button>
             </div>
 
             {/* Delete account */}
