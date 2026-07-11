@@ -12,7 +12,6 @@ import LoadingScreen from "./components/LoadingScreen";
 import Account from "./pages/Account";
 import NotFound from "./pages/NotFound";
 import ErrorBoundary from "./components/ErrorBoundary";
-import { useTheme } from "./hooks/useTheme";
 import Trash from "./pages/Trash";
 
 const NoteEditor = lazy(() => import("./pages/NoteEditor"));
@@ -21,7 +20,6 @@ const NoteDetail = lazy(() => import("./pages/NoteDetail"));
 const queryClient = new QueryClient();
 
 export default function App() {
-    useTheme();
     return (
         <ErrorBoundary>
             <QueryClientProvider client={queryClient}>

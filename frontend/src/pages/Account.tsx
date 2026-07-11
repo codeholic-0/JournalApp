@@ -7,6 +7,7 @@ import { Lock, Loader2, Trash2, AlertTriangle, X } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../hooks/useAuth";
 import { useUpdatePassword, useDeleteUser } from "../hooks/useUser";
+import { useAppearance } from "../hooks/useAppearance";
 import axios from "axios";
 
 const schema = z
@@ -24,6 +25,18 @@ const schema = z
 
 type PasswordForm = z.infer<typeof schema>;
 
+const ACCENTS = [
+    { name: "Default", value: null },
+    { name: "Blue", value: "#1976d2" },
+    { name: "Red", value: "#ef4444" },
+    { name: "Green", value: "#22c55e" },
+    { name: "Purple", value: "#a855f7" },
+    { name: "Orange", value: "#f97316" },
+    { name: "Teal", value: "#14b8a6" },
+    { name: "Pink", value: "#ec4899" },
+    { name: "Yellow", value: "#eab308" },
+];
+
 export default function Account() {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
@@ -31,7 +44,7 @@ export default function Account() {
     const deleteUser = useDeleteUser();
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const username = user?.username ?? "";
-
+    const { theme, accent, setTheme, setAccent } = useAppearance(username);
     const {
         register,
         handleSubmit,
@@ -121,6 +134,56 @@ export default function Account() {
                     {isSubmitting ? "Updating..." : "Update password"}
                 </button>
             </form>
+            {/* Appearance */}
+            <div className="pt-4 border-t border-outline space-y-3">
+                <h2 className="text-lg font-semibold text-on-surface">
+                    Appearance
+                </h2>
+
+                {/* Theme */}
+                <div>
+                    <p className="text-sm text-on-surface-muted mb-2">Theme</p>
+                    <div className="flex gap-2">
+                        {["light", "dark"].map((t) => (
+                            <button
+                                key={t}
+                                onClick={() => setTheme(t)}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition-colors ${
+                                    theme === t
+                                        ? "bg-primary text-white"
+                                        : "border border-outline text-on-surface-muted hover:bg-hover"
+                                }`}
+                            >
+                                {t}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Accent */}
+                <div>
+                    <p className="text-sm text-on-surface-muted mb-2">
+                        Accent color
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                        {ACCENTS.map((a) => (
+                            <button
+                                key={a.value ?? "__none"}
+                                onClick={() => setAccent(a.value)}
+                                className={`w-7 h-7 rounded-full border-2 transition-all ${
+                                    accent === a.value
+                                        ? "border-primary scale-110"
+                                        : "border-transparent hover:scale-110"
+                                }`}
+                                style={{
+                                    backgroundColor: a.value ?? "var(--accent)",
+                                }}
+                                title={a.name}
+                            />
+                        ))}
+                    </div>
+                </div>
+            </div>
 
             {/* Delete account */}
             <div className="pt-4 border-t border-outline space-y-3">

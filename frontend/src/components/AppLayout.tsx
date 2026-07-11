@@ -14,7 +14,7 @@ import {
     Trash2,
 } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
-import { useTheme } from "../hooks/useTheme";
+import { useAppearance } from "../hooks/useAppearance";
 import WorkspaceSwitcher from "./WorkspaceSwitcher";
 import SortSelector from "./SortSelector";
 import CreateWorkspaceModal from "./CreateWorkspaceModal";
@@ -35,7 +35,7 @@ const accountItem = {
 
 export default function AppLayout() {
     const { user, logout } = useAuth();
-    const { isDark, toggle } = useTheme();
+    const { theme, setTheme } = useAppearance(user?.username);
     const navigate = useNavigate();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -130,21 +130,15 @@ export default function AppLayout() {
             {/* Bottom */}
             <div className="border-t border-outline p-2 space-y-1">
                 <button
-                    onClick={toggle}
+                    onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
                     className={`flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm text-on-surface-muted hover:bg-hover hover:text-on-surface transition-colors ${
                         collapsed ? "justify-center px-2" : ""
                     }`}
-                    title={
-                        collapsed
-                            ? isDark
-                                ? "Light mode"
-                                : "Dark mode"
-                            : undefined
-                    }
+                    title={collapsed ? (theme === "dark" ? "Light mode" : "Dark mode") : undefined}
                 >
-                    {isDark ? <Sun size={18} /> : <Moon size={18} />}
+                    {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
                     {!collapsed && (
-                        <span>{isDark ? "Light mode" : "Dark mode"}</span>
+                        <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>
                     )}
                 </button>
 
@@ -174,7 +168,9 @@ export default function AppLayout() {
             {/* Mobile hamburger */}
             <button
                 className={`lg:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-surface-alt border border-outline text-on-surface shadow-sm transition-opacity duration-200 ${
-                    sidebarOpen ? "opacity-0 pointer-events-none" : "opacity-100"
+                    sidebarOpen
+                        ? "opacity-0 pointer-events-none"
+                        : "opacity-100"
                 }`}
                 onClick={() => setSidebarOpen(true)}
                 aria-label="Open sidebar"
