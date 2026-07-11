@@ -44,7 +44,16 @@ export default function Account() {
     const deleteUser = useDeleteUser();
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const username = user?.username ?? "";
-    const { theme, accent, setTheme, setAccent } = useAppearance(username);
+    const {
+        theme,
+        accent,
+        fontScale,
+        density,
+        setTheme,
+        setAccent,
+        setDensity,
+        setFontScale,
+    } = useAppearance(username);
     const {
         register,
         handleSubmit,
@@ -139,6 +148,46 @@ export default function Account() {
                 <h2 className="text-lg font-semibold text-on-surface">
                     Appearance
                 </h2>
+
+                {/* Density */}
+                <div>
+                    <p className="text-sm text-on-surface-muted mb-2">
+                        Density
+                    </p>
+                    <div className="flex gap-2">
+                        {["comfortable", "compact"].map((d) => (
+                            <button
+                                key={d}
+                                onClick={() => setDensity(d)}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition-colors ${
+                                    density === d
+                                        ? "bg-primary text-white"
+                                        : "border border-outline text-on-surface-muted hover:bg-hover"
+                                }`}
+                            >
+                                {d}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Font scale */}
+                <div>
+                    <p className="text-sm text-on-surface-muted mb-2">
+                        Font scale: {fontScale?.toFixed(3) ?? "1.000"}
+                    </p>
+                    <input
+                        type="range"
+                        min="0.875"
+                        max="1.25"
+                        step="0.0625"
+                        value={fontScale ?? 1}
+                        onChange={(e) =>
+                            setFontScale(parseFloat(e.target.value))
+                        }
+                        className="w-full accent-primary"
+                    />
+                </div>
 
                 {/* Theme */}
                 <div>

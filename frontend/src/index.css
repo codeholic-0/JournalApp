@@ -58,6 +58,8 @@
     --tw-prose-pre-bg: var(--bg-subtle);
     --tw-prose-th-borders: var(--border);
     --tw-prose-td-borders: var(--border);
+    --row-density: comfortable;
+    --font-scale: 1;
 }
 
 .dark {

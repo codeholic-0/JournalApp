@@ -21,6 +21,14 @@ function applyAccent(accent: string | null) {
     }
 }
 
+function applyDensity(density: string) {
+    document.documentElement.style.setProperty("--row-density", density);
+}
+
+function applyFontScale(scale: number) {
+    document.documentElement.style.setProperty("--font-scale", String(scale));
+}
+
 export function useAppearance(username?: string) {
     const qc = useQueryClient();
     const initial = getInitialPrefs();
@@ -52,6 +60,16 @@ export function useAppearance(username?: string) {
         if (username) updateMutation.mutate({ accent });
     };
 
+    const setDensity = (density: string) => {
+        applyDensity(density);
+        if (username) updateMutation.mutate({ density });
+    };
+
+    const setFontScale = (fontScale: number) => {
+        applyFontScale(fontScale);
+        if (username) updateMutation.mutate({ fontScale });
+    };
+
     return {
         theme: prefs.theme ?? "dark",
         accent: prefs.accent ?? null,
@@ -59,5 +77,7 @@ export function useAppearance(username?: string) {
         density: prefs.density ?? null,
         setTheme,
         setAccent,
+        setDensity,
+        setFontScale,
     };
 }
