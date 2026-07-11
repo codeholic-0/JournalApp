@@ -39,7 +39,6 @@ public class UserPreferencesServiceTests {
 
     @BeforeEach
     void setUp() {
-        when(redisTemplate.opsForValue()).thenReturn(valueOps);
         userPreferencesService = new UserPreferencesService(userRepository, redisTemplate);
     }
 
@@ -75,6 +74,7 @@ public class UserPreferencesServiceTests {
 
     @Test
     void getUserPreferences_cached() {
+        when(redisTemplate.opsForValue()).thenReturn(valueOps);
         UserPreferencesResponse cached = new UserPreferencesResponse("light", "#e07c3c", 1.0, "compact");
         when(valueOps.get("user:prefs:testuser")).thenReturn(cached);
 
@@ -87,6 +87,7 @@ public class UserPreferencesServiceTests {
 
     @Test
     void getUserPreferences_fromDb_populatesCache() {
+        when(redisTemplate.opsForValue()).thenReturn(valueOps);
         User user = userWithPrefs("light", null, null, null);
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(user));
         when(valueOps.get("user:prefs:testuser")).thenReturn(null);

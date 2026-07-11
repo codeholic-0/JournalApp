@@ -51,7 +51,11 @@ public class UserPreferencesService {
         var user = userRepository.findByUsername(username)
                         .orElseThrow(() -> new ResourceNotFoundException("User with username: " + username + " not found"));
 
-        UserPreferencesResponse response = toResponse(user.getPrefs());
+        var prefs = user.getPrefs();
+        if (prefs == null) {
+            prefs = new User.Preferences();
+        }
+        UserPreferencesResponse response = toResponse(prefs);
         try {
             redisTemplate.opsForValue().set(key, response, Duration.ofMinutes(5));
         } catch (Exception e) {

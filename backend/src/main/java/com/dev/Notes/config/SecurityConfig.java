@@ -38,15 +38,15 @@ public class SecurityConfig {
                         .requestMatchers("/api/check/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        .anyRequest()
-                        .authenticated())
+                        .requestMatchers("/api/**").authenticated()
+                        .anyRequest().permitAll())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .headers(headers -> headers
                         .xssProtection(
                                 xss -> xss.headerValue(XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
                         .contentSecurityPolicy(csp -> csp.policyDirectives(
-                                "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'"))
+                                "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"))
                         .frameOptions(frame -> frame.sameOrigin())
                         .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31536000)));
         return http.build();
@@ -55,7 +55,8 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:5173", "https://journal-app-frontend-taupe.vercel.app/", "https://ynotes-dev-x.vercel.app/"));
+        config.setAllowedOrigins(List.of("http://localhost:5173", "https://journal-app-frontend-taupe.vercel.app/",
+                "https://ynotes-dev-x.vercel.app/"));
         config.setAllowedMethods(List.of("GET", "POST", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
