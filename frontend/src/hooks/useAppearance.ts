@@ -23,6 +23,9 @@ function applyAccent(accent: string | null) {
 
 function applyDensity(density: string) {
     document.documentElement.style.setProperty("--row-density", density);
+    const isCompact = density === "compact";
+    document.documentElement.style.setProperty("--card-p", isCompact ? "0.5rem" : "1rem");
+    document.documentElement.style.setProperty("--grid-gap", isCompact ? "0.5rem" : "1rem");
 }
 
 function applyFontScale(scale: number) {
@@ -45,7 +48,20 @@ export function useAppearance(username?: string) {
     const updateMutation = useMutation({
         mutationFn: (body: Partial<UserPreferences>) =>
             preferencesApi.updatePreferences(username!, body),
-        onSuccess: () => {
+        onMutate: async (body) => {
+            await qc.cancelQueries({ queryKey: ["prefs", username] });
+            const snapshot = qc.getQueryData<UserPreferences>(["prefs", username]);
+            qc.setQueryData<UserPreferences>(["prefs", username], (old) => ({
+                ...(old ?? initial),
+                ...body,
+            }));
+            return { snapshot };
+        },
+        onError: (_err, _body, ctx) => {
+            if (ctx?.snapshot)
+                qc.setQueryData(["prefs", username], ctx.snapshot);
+        },
+        onSettled: () => {
             qc.invalidateQueries({ queryKey: ["prefs", username] });
         },
     });

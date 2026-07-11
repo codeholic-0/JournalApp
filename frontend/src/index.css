@@ -60,6 +60,8 @@
     --tw-prose-td-borders: var(--border);
     --row-density: comfortable;
     --font-scale: 1;
+    --card-p: 1rem;
+    --grid-gap: 1rem;
 }
 
 .dark {
@@ -178,6 +180,7 @@
 html {
     background-color: var(--bg);
     color: var(--fg);
+    font-size: calc(1rem * var(--font-scale));
     transition:
         background-color 0.3s,
         color 0.15s;

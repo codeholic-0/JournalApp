@@ -152,11 +152,11 @@ export default function Dashboard() {
                 )
             ) : (
                 <>
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3" style={{ gap: "var(--grid-gap)" }}>
                         {displayNotes.map((j) => (
                             <div
                                 key={j.id}
-                                className="group bg-surface-alt rounded-xl border border-outline p-4 space-y-3 hover:scale-[1.02] hover:shadow-md transition-all duration-200"
+                                className="group bg-surface-alt rounded-xl border border-outline space-y-3 hover:scale-[1.02] hover:shadow-md transition-all duration-200" style={{ padding: "var(--card-p)" }}
                             >
                                 <div className="flex items-start gap-3">
                                     <FileText

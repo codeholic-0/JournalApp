@@ -235,13 +235,14 @@ export default function Account() {
             </div>
 
             {/* Logout */}
-            <div className="pt-4 border-b border-outline pb-4 space-y-3">
+            <div className="pt-4 border-t border-outline space-y-3">
+                <h2 className="text-lg font-semibold text-red-400">Logout</h2>
                 <button
                     onClick={async () => {
                         await logout();
                         navigate("/login");
                     }}
-                    className="flex items-center gap-2 px-6 py-2 rounded-lg border border-outline text-sm text-on-surface-muted hover:bg-hover hover:text-red-400 transition-colors active:scale-[0.98]"
+                    className="flex items-center gap-2 px-6 py-2 rounded-lg border border-red-400/30 bg-red-600/10 text-red-400 text-sm font-medium hover:bg-red-600/20 transition-colors active:scale-[0.98]"
                 >
                     <LogOut size={14} />
                     Logout
