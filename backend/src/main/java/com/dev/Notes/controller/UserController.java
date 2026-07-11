@@ -9,8 +9,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import com.dev.Notes.dto.request.UserPreferencesRequest;
 import com.dev.Notes.dto.request.UserRequest;
+import com.dev.Notes.dto.response.UserPreferencesResponse;
 import com.dev.Notes.dto.response.UserResponse;
+import com.dev.Notes.service.UserPreferencesService;
 import com.dev.Notes.service.UserService;
 
 @RestController
@@ -19,9 +22,11 @@ import com.dev.Notes.service.UserService;
 @Tag(name = "Users", description = "User management endpoints")
 public class UserController {
     private final UserService userService;
+    private final UserPreferencesService userPreferencesService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, UserPreferencesService userPreferencesService) {
         this.userService = userService;
+        this.userPreferencesService = userPreferencesService;
     }
 
     @Operation(summary = "Get user", description = "Fetch user profile by username")
@@ -53,4 +58,15 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/prefs")
+    public ResponseEntity<UserPreferencesResponse> getUserPreferences(@PathVariable String username){
+        return ResponseEntity.ok(userPreferencesService.getUserPreferences(username));
+    }
+
+    @PutMapping("/prefs")
+    public ResponseEntity<UserPreferencesResponse> updateUserPreferences(
+        @PathVariable String username,
+        @Valid @RequestBody UserPreferencesRequest req) {
+        return ResponseEntity.ok(userPreferencesService.updateUserPreferences(username, req));
+    }
 }

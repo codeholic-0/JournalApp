@@ -29,4 +29,17 @@ public class User {
     private List<String> noteIds = new ArrayList<>();
 
     private List<UserType> roles = new ArrayList<>();
+
+    private Preferences prefs = new Preferences();
+
+    @Getter
+    @Setter
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class Preferences{
+        private String theme = "dark";
+        private String accent;
+        private Double fontScale;
+        private String density;
+    }
 }

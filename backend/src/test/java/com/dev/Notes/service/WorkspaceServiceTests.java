@@ -105,7 +105,7 @@ public class WorkspaceServiceTests {
 
     @Test
     void getOrCreateInternalWorkspace_createsNew() {
-        User user = new User("uid", "testuser", "password", List.of(), List.of(UserType.USER));
+        User user = new User("uid", "testuser", "password", List.of(), List.of(UserType.USER), new User.Preferences());
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(user));
         when(workspaceRepository.findByUsernameAndName("testuser", "__internal_uid")).thenReturn(Optional.empty());
         when(workspaceRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
@@ -118,7 +118,7 @@ public class WorkspaceServiceTests {
 
     @Test
     void getOrCreateInternalWorkspace_returnsExisting() {
-        User user = new User("uid", "testuser", "password", List.of(), List.of(UserType.USER));
+        User user = new User("uid", "testuser", "password", List.of(), List.of(UserType.USER), new User.Preferences());
         Workspace internal = workspace("__internal_uid");
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(user));
         when(workspaceRepository.findByUsernameAndName("testuser", "__internal_uid")).thenReturn(Optional.of(internal));
