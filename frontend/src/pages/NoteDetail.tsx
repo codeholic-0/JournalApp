@@ -204,7 +204,10 @@ export default function NoteDetail() {
                 </span>
             </div>
 
-            <div className="border-t border-outline pt-6">
+            <div
+                className="border-t border-outline pt-6"
+                style={note.color ? { borderTop: `4px solid ${note.color}` } : undefined}
+            >
                 {note.content ? (
                     <div className="prose prose-sm max-w-none">
                         <ReactMarkdown

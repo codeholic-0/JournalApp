@@ -9,6 +9,7 @@ export interface NoteResponse {
     createdAt: string;
     updatedAt: string;
     sortOrder?: string;
+    color?: string;
 }
 
 export interface NoteRequest {

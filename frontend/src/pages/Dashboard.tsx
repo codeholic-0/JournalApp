@@ -4,9 +4,6 @@ import {
     FileText,
     FilePlus2,
     Calendar,
-    Eye,
-    Pencil,
-    Trash2,
     ChevronLeft,
     ChevronRight,
     Star,
@@ -34,6 +31,7 @@ import {
 import { useVaultStore } from "../store/vaultStore";
 import type { NoteResponse } from "../types/note";
 import { generateSortOrder } from "../lib/fractionalIndex";
+import NoteCardActions from "../components/NoteCardActions";
 
 function SortableNoteCard({
     note,
@@ -56,81 +54,73 @@ function SortableNoteCard({
     };
 
     return (
-        <div
-            ref={setNodeRef}
-            style={{ ...style, padding: "var(--card-p)" }}
-            className="group bg-surface-alt rounded-xl border border-outline space-y-3 hover:scale-[1.02] hover:shadow-md transition-all duration-200"
-        >
-            <div className="flex items-start gap-3">
-                <button
-                    {...attributes}
-                    {...listeners}
-                    className="p-0.5 mt-0.5 cursor-grab active:cursor-grabbing text-on-surface-muted hover:text-on-surface transition-colors touch-none"
-                    aria-label="Drag to reorder"
-                >
-                    <GripVertical size={16} />
-                </button>
-                <FileText size={18} className="text-primary shrink-0 mt-0.5" />
-                <div className="min-w-0 flex-1">
-                    <h2 className="font-semibold text-on-surface truncate">
-                        {note.title}
-                    </h2>
-                </div>
-                <NoteTypeBadge type={note.noteType} />
-            </div>
-
-            <div className="flex items-center gap-1 shrink-0">
-                <button onClick={() => toggleFav.mutate({ username, id: note.id })}>
-                    {note.favorite ? (
-                        <Star size={16} className="text-amber-400 fill-amber-400" />
-                    ) : (
-                        <Star size={16} />
-                    )}
-                </button>
-                <button onClick={() => togglePin.mutate({ username, id: note.id })}>
-                    {note.pinned ? (
-                        <Pin size={16} className="text-primary fill-primary" />
-                    ) : (
-                        <Pin size={16} />
-                    )}
-                </button>
-            </div>
-
-            {note.content && (
-                <p className="text-sm text-on-surface-muted line-clamp-2 leading-relaxed">
-                    {note.content}
-                </p>
-            )}
-
-            <div className="flex items-center gap-1.5 text-xs text-on-surface-muted">
-                <Calendar size={12} />
-                <span>{new Date(note.createdAt).toLocaleDateString()}</span>
-            </div>
-
-            <div className="flex items-center justify-between pt-1">
-                <div className="flex gap-3">
-                    <Link
-                        to={`/notes/${note.id}`}
-                        className="flex items-center gap-1 text-xs text-on-surface-muted hover:text-primary transition-colors"
-                    >
-                        <Eye size={14} /> View
-                    </Link>
-                    <Link
-                        to={`/notes/${note.id}/edit`}
-                        className="flex items-center gap-1 text-xs text-on-surface-muted hover:text-primary transition-colors"
-                    >
-                        <Pencil size={14} /> Edit
-                    </Link>
-                </div>
-                <button
-                    onClick={() => onDelete(note)}
-                    className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 font-medium transition-colors"
-                >
-                    <Trash2 size={14} /> Delete
-                </button>
-            </div>
+    <div
+        ref={setNodeRef}
+        style={{
+            ...style,
+            padding: "var(--card-p)",
+            borderTop: note.color ? `4px solid ${note.color}` : undefined,
+        }}
+        className="relative group bg-surface-alt rounded-xl border border-outline border-t-4 space-y-3 hover:scale-[1.02] hover:shadow-md transition-all duration-200"
+    >
+        {/* Pin/Fav chips — hover revealed top-right */}
+        <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+                onClick={() => toggleFav.mutate({ username, id: note.id })}
+                className={`p-1 rounded-full ${
+                    note.favorite
+                        ? "bg-amber-100 text-amber-600"
+                        : "bg-surface text-on-surface-muted"
+                }`}
+                aria-label="Toggle favorite"
+            >
+                <Star size={12} />
+            </button>
+            <button
+                onClick={() => togglePin.mutate({ username, id: note.id })}
+                className={`p-1 rounded-full ${
+                    note.pinned
+                        ? "bg-primary/10 text-primary"
+                        : "bg-surface text-on-surface-muted"
+                }`}
+                aria-label="Toggle pin"
+            >
+                <Pin size={12} />
+            </button>
         </div>
-    );
+
+        <div className="flex items-start gap-3">
+            <button
+                {...attributes}
+                {...listeners}
+                className="p-0.5 mt-0.5 cursor-grab active:cursor-grabbing text-on-surface-muted hover:text-on-surface transition-colors touch-none"
+                aria-label="Drag to reorder"
+            >
+                <GripVertical size={16} />
+            </button>
+            <FileText size={18} className="text-primary shrink-0 mt-0.5" />
+            <div className="min-w-0 flex-1">
+                <h2 className="font-semibold text-on-surface truncate">
+                    {note.title}
+                </h2>
+            </div>
+            <NoteTypeBadge type={note.noteType} />
+        </div>
+
+        {note.content && (
+            <p className="text-sm text-on-surface-muted line-clamp-2 leading-relaxed">
+                {note.content}
+            </p>
+        )}
+
+        <div className="flex items-center gap-1.5 text-xs text-on-surface-muted">
+            <Calendar size={12} />
+            <span>{new Date(note.createdAt).toLocaleDateString()}</span>
+        </div>
+
+        <NoteCardActions noteId={note.id} onDelete={() => onDelete(note)} />
+    </div>
+);
 }
 
 export default function Dashboard() {
