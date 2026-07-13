@@ -61,34 +61,8 @@ function SortableNoteCard({
             padding: "var(--card-p)",
             borderTop: note.color ? `4px solid ${note.color}` : undefined,
         }}
-        className="relative group bg-surface-alt rounded-xl border border-outline border-t-4 space-y-3 hover:scale-[1.02] hover:shadow-md transition-all duration-200"
+        className="group bg-surface-alt rounded-xl border border-outline border-t-4 space-y-3 hover:scale-[1.02] hover:shadow-md transition-all duration-200"
     >
-        {/* Pin/Fav chips — hover revealed top-right */}
-        <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button
-                onClick={() => toggleFav.mutate({ username, id: note.id })}
-                className={`p-1 rounded-full ${
-                    note.favorite
-                        ? "bg-amber-100 text-amber-600"
-                        : "bg-surface text-on-surface-muted"
-                }`}
-                aria-label="Toggle favorite"
-            >
-                <Star size={12} />
-            </button>
-            <button
-                onClick={() => togglePin.mutate({ username, id: note.id })}
-                className={`p-1 rounded-full ${
-                    note.pinned
-                        ? "bg-primary/10 text-primary"
-                        : "bg-surface text-on-surface-muted"
-                }`}
-                aria-label="Toggle pin"
-            >
-                <Pin size={12} />
-            </button>
-        </div>
-
         <div className="flex items-start gap-3">
             <button
                 {...attributes}
@@ -104,6 +78,28 @@ function SortableNoteCard({
                     {note.title}
                 </h2>
             </div>
+            <button
+                onClick={() => toggleFav.mutate({ username, id: note.id })}
+                className={`shrink-0 transition-colors ${
+                    note.favorite
+                        ? "text-amber-400"
+                        : "text-on-surface-muted max-lg:opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
+                }`}
+                aria-label="Toggle favorite"
+            >
+                <Star size={14} />
+            </button>
+            <button
+                onClick={() => togglePin.mutate({ username, id: note.id })}
+                className={`shrink-0 transition-colors ${
+                    note.pinned
+                        ? "text-primary"
+                        : "text-on-surface-muted max-lg:opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
+                }`}
+                aria-label="Toggle pin"
+            >
+                <Pin size={14} />
+            </button>
             <NoteTypeBadge type={note.noteType} />
         </div>
 
@@ -169,9 +165,15 @@ export default function Dashboard() {
     );
 
     const notes = data?.content ?? [];
-    const displayNotes = showFavorites
-        ? notes.filter((n) => n.favorite)
-        : notes;
+    const displayNotes = (showFavorites ? notes.filter((n) => n.favorite) : notes)
+        .sort((a, b) => {
+            if (a.pinned && !b.pinned) return -1;
+            if (!a.pinned && b.pinned) return 1;
+            if (a.sortOrder && b.sortOrder) return a.sortOrder.localeCompare(b.sortOrder);
+            if (a.sortOrder) return -1;
+            if (b.sortOrder) return 1;
+            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        });
     const totalPages = data?.page?.totalPages ?? 0;
 
     const handleDragEnd = useCallback(
