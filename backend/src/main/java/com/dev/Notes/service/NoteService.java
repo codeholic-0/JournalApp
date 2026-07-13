@@ -8,7 +8,6 @@ import java.util.Set;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -32,18 +31,14 @@ public class NoteService {
 
     private final NoteRepository noteRepository;
     private final UserRepository userRepository;
-    @Lazy
-    private final WorkspaceService workspaceService;
     private final RedisTemplate<String, Object> redisTemplate;
 
     public NoteService(
             NoteRepository noteRepository,
             UserRepository userRepository,
-            WorkspaceService workspaceService,
             RedisTemplate<String, Object> redisTemplate) {
         this.noteRepository = noteRepository;
         this.userRepository = userRepository;
-        this.workspaceService = workspaceService;
         this.redisTemplate = redisTemplate;
     }
 
@@ -98,9 +93,7 @@ public class NoteService {
                         "User with username: " + username + " not found"));
         var note = toNote(req);
         note.setUsername(username);
-        note.setWorkspaceId(req.getWorkspaceId() != null
-                ? req.getWorkspaceId()
-                : workspaceService.getOrCreateInternalWorkspace(username).getId());
+        note.setWorkspaceId(req.getWorkspaceId());
         note.setFolderId(req.getFolderId());
         noteRepository.save(note);
         user.getNoteIds().add(note.getId());

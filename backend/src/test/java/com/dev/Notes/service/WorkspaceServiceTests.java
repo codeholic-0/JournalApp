@@ -15,21 +15,17 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.redis.core.RedisTemplate;
 
 import com.dev.Notes.common.WorkspaceSizeResult;
 import com.dev.Notes.dto.request.WorkspacePatchRequest;
 import com.dev.Notes.dto.request.WorkspaceRequest;
 import com.dev.Notes.dto.response.WorkspaceDeleteResponse;
 import com.dev.Notes.dto.response.WorkspaceResponse;
-import com.dev.Notes.enumeration.UserType;
 import com.dev.Notes.exceptions.WorkspaceConflictException;
 import com.dev.Notes.exceptions.WorkspaceOwnershipMismatchException;
 import com.dev.Notes.models.Note;
-import com.dev.Notes.models.User;
 import com.dev.Notes.models.Workspace;
 import com.dev.Notes.repository.NoteRepository;
-import com.dev.Notes.repository.UserRepository;
 import com.dev.Notes.repository.WorkspaceRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -38,11 +34,7 @@ public class WorkspaceServiceTests {
     @Mock
     private WorkspaceRepository workspaceRepository;
     @Mock
-    private UserRepository userRepository;
-    @Mock
     private NoteRepository noteRepository;
-    @Mock
-    private RedisTemplate<String, Object> redisTemplate;
     @Mock
     private MongoTemplate mongoTemplate;
 
@@ -51,8 +43,7 @@ public class WorkspaceServiceTests {
     @BeforeEach
     void setUp() {
         workspaceService = new WorkspaceService(
-                workspaceRepository, userRepository, noteRepository,
-                redisTemplate, mongoTemplate, 524288000L);
+                workspaceRepository, noteRepository, mongoTemplate, 524288000L);
     }
 
     private Workspace workspace(String name) {
@@ -104,32 +95,6 @@ public class WorkspaceServiceTests {
     }
 
     @Test
-    void getOrCreateInternalWorkspace_createsNew() {
-        User user = new User("uid", "testuser", "password", List.of(), List.of(UserType.USER), new User.Preferences());
-        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(user));
-        when(workspaceRepository.findByUsernameAndName("testuser", "__internal_uid")).thenReturn(Optional.empty());
-        when(workspaceRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
-
-        WorkspaceResponse res = workspaceService.getOrCreateInternalWorkspace("testuser");
-
-        assertThat(res.getName()).isEqualTo("__internal_uid");
-        verify(workspaceRepository).save(any());
-    }
-
-    @Test
-    void getOrCreateInternalWorkspace_returnsExisting() {
-        User user = new User("uid", "testuser", "password", List.of(), List.of(UserType.USER), new User.Preferences());
-        Workspace internal = workspace("__internal_uid");
-        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(user));
-        when(workspaceRepository.findByUsernameAndName("testuser", "__internal_uid")).thenReturn(Optional.of(internal));
-
-        WorkspaceResponse res = workspaceService.getOrCreateInternalWorkspace("testuser");
-
-        assertThat(res.getId()).isEqualTo("ws-__internal_uid");
-        verify(workspaceRepository, never()).save(any());
-    }
-
-    @Test
     void getWorkspaceById_owned_returns() {
         Workspace ws = workspace("personal");
         when(workspaceRepository.findById("ws-1")).thenReturn(Optional.of(ws));
@@ -154,22 +119,9 @@ public class WorkspaceServiceTests {
         when(workspaceRepository.findByUsername(eq("testuser"), any(Sort.class)))
                 .thenReturn(List.of(workspace("A"), workspace("B")));
 
-        var res = workspaceService.getWorkspaces("testuser", "name", false);
+        var res = workspaceService.getWorkspaces("testuser", "name");
 
         assertThat(res).hasSize(2);
-    }
-
-    @Test
-    void getWorkspaces_filtersInternal() {
-        Workspace normal = workspace("personal");
-        Workspace internal = workspace("__internal_uid");
-        when(workspaceRepository.findByUsername(eq("testuser"), any(Sort.class)))
-                .thenReturn(List.of(normal, internal));
-
-        var res = workspaceService.getWorkspaces("testuser", "name", false);
-
-        assertThat(res).hasSize(1);
-        assertThat(res.get(0).getName()).isEqualTo("personal");
     }
 
     @Test

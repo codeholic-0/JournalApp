@@ -43,10 +43,9 @@ public class WorkspaceController {
     @GetMapping
     public ResponseEntity<List<WorkspaceResponse>> getWorkspaces(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestParam(defaultValue = "sortOrder") String sort,
-            @RequestParam(defaultValue = "false") boolean includeInternal) {
+            @RequestParam(defaultValue = "sortOrder") String sort) {
         String username = userDetails.getUsername();
-        return ResponseEntity.ok(workspaceService.getWorkspaces(username, sort, includeInternal));
+        return ResponseEntity.ok(workspaceService.getWorkspaces(username, sort));
     }
 
     @Operation(summary = "Create workspace", description = "Create a new workspace for the authenticated user")
@@ -71,15 +70,6 @@ public class WorkspaceController {
             @PathVariable String workspaceId) {
         String username = userDetails.getUsername();
         return ResponseEntity.ok(workspaceService.getWorkspaceById(username, workspaceId));
-    }
-
-    @Operation(summary = "Get internal workspace", description = "Get or create the internal (unfiled) workspace for the authenticated user")
-    @ApiResponse(responseCode = "200", description = "Internal workspace returned")
-    @GetMapping("/internal")
-    public ResponseEntity<WorkspaceResponse> getInternalWorkspace(
-            @AuthenticationPrincipal UserDetails userDetails) {
-        String username = userDetails.getUsername();
-        return ResponseEntity.ok(workspaceService.getOrCreateInternalWorkspace(username));
     }
 
     @Operation(summary = "Update workspace", description = "Partially update a workspace (name, icon, color)")

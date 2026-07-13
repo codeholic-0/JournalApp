@@ -72,7 +72,7 @@ public class WorkspaceControllerTests {
 
     @Test
     void getWorkspaces_returns200() throws Exception {
-        when(workspaceService.getWorkspaces("testuser", "name", false))
+        when(workspaceService.getWorkspaces("testuser", "name"))
                 .thenReturn(List.of(sampleResponse()));
 
         mockMvc.perform(get("/api/workspaces?sort=name"))
@@ -99,14 +99,6 @@ public class WorkspaceControllerTests {
         mockMvc.perform(get("/api/workspaces/ws-1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value("ws-1"));
-    }
-
-    @Test
-    void getInternalWorkspace_returns200() throws Exception {
-        when(workspaceService.getOrCreateInternalWorkspace("testuser")).thenReturn(sampleResponse());
-
-        mockMvc.perform(get("/api/workspaces/internal"))
-                .andExpect(status().isOk());
     }
 
     @Test
