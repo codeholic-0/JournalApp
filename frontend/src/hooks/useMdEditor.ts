@@ -1,4 +1,10 @@
-import { useRef, useEffect, useLayoutEffect, useCallback, useState } from "react";
+import {
+    useRef,
+    useEffect,
+    useLayoutEffect,
+    useCallback,
+    useState,
+} from "react";
 import { mountMD, type EditorAPI, type MountMDOpts } from "../editor/mdEditor";
 import { useDebouncedCallback } from "./useDebouncedCallback";
 
@@ -36,18 +42,19 @@ export function useMdEditor(opts?: MountMDOpts) {
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     const getValue = useCallback(() => apiRef.current?.getValue() ?? "", []);
-    const setValue = useCallback(
-        (val: string) => {
-            if (apiRef.current) {
-                apiRef.current.setValue(val);
-            }
-        },
-        [],
-    );
+    const setValue = useCallback((val: string) => {
+        if (apiRef.current) {
+            apiRef.current.setValue(val);
+        }
+    }, []);
 
     const setWrap = useCallback((enabled: boolean) => {
         apiRef.current?.setWrap(enabled);
     }, []);
 
-    return { editorRef, getValue, setValue, ready, setWrap, stats };
+    const triggerCompletion = useCallback(() => {
+        apiRef.current?.triggerCompletion();
+    }, []);
+
+    return { editorRef, getValue, setValue, ready, setWrap, stats, triggerCompletion };
 }

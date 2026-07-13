@@ -3,7 +3,14 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowLeft, FileText, Loader2, Eye, WrapText } from "lucide-react";
+import {
+    ArrowLeft,
+    FileText,
+    Loader2,
+    Eye,
+    WrapText,
+    Plus,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "../hooks/useAuth";
@@ -49,7 +56,15 @@ export default function NoteEditor() {
 
     const getDebouncedSaveRef = useRef<() => void>(() => {});
 
-    const { editorRef, getValue, setValue, ready, setWrap, stats } = useMdEditor({
+    const {
+        editorRef,
+        getValue,
+        setValue,
+        ready,
+        setWrap,
+        stats,
+        triggerCompletion,
+    } = useMdEditor({
         onDocChange: () => {
             dirtyRef.current = true;
             getDebouncedSaveRef.current();
@@ -190,14 +205,29 @@ export default function NoteEditor() {
                 <div className="flex items-center justify-between border border-outline rounded-lg px-3 py-1.5 text-xs text-on-surface-muted">
                     <button
                         type="button"
-                        onClick={() => { setWrapped(!wrapped); setWrap(!wrapped); }}
+                        onClick={() => {
+                            setWrapped(!wrapped);
+                            setWrap(!wrapped);
+                        }}
                         className={`flex items-center gap-1.5 px-2 py-1 rounded transition-colors ${
-                            wrapped ? "bg-primary/10 text-primary" : "hover:bg-hover"
+                            wrapped
+                                ? "bg-primary/10 text-primary"
+                                : "hover:bg-hover"
                         }`}
                     >
                         <WrapText size={14} />
                         Wrap
                     </button>
+
+                    <button
+                        type="button"
+                        onClick={triggerCompletion}
+                        className="flex items-center gap-1.5 px-2 py-1 rounded hover:bg-hover transition-colors"
+                        title="Insert block (/s)"
+                    >
+                        <Plus size={14} />
+                    </button>
+
                     <div className="flex items-center gap-3">
                         <span>{stats.words} words</span>
                         <span>{stats.chars} chars</span>

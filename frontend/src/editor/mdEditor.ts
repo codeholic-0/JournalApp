@@ -18,9 +18,15 @@ import {
     foldKeymap,
 } from "@codemirror/language";
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
-import { closeBrackets, closeBracketsKeymap } from "@codemirror/autocomplete";
+import {
+    closeBrackets,
+    closeBracketsKeymap,
+    autocompletion,
+    startCompletion,
+} from "@codemirror/autocomplete";
 import { languages } from "@codemirror/language-data";
 import { tags } from "@lezer/highlight";
+import { slashMenu } from "./extensions/slashMenu";
 
 const mdHighlightStyle = HighlightStyle.define([
     { tag: tags.heading, class: "font-bold" },
@@ -51,6 +57,7 @@ export interface EditorAPI {
     getValue: () => string;
     setValue: (val: string) => void;
     setWrap: (enabled: boolean) => void;
+    triggerCompletion: () => void;
     destroy: () => void;
 }
 
@@ -80,6 +87,7 @@ export function mountMD(
             foldGutter(),
             bracketMatching(),
             closeBrackets(),
+            autocompletion({ override: [slashMenu] }),
             indentOnInput(),
             history(),
             highlightCompartment.of(syntaxHighlighting(mdHighlightStyle)),
@@ -125,6 +133,30 @@ export function mountMD(
                     backgroundColor: "var(--color-hover)",
                     outline: "1px solid var(--color-outline)",
                 },
+                ".cm-tooltip.cm-tooltip-autocomplete": {
+                    backgroundColor: "var(--bg-elevated)",
+                    border: "1px solid var(--border)",
+                    borderRadius: "8px",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+                    zIndex: "1000",
+                    "& > ul": {
+                        fontFamily: "inherit",
+                        "& > li": {
+                            color: "var(--fg)",
+                            padding: "6px 12px",
+                            "&:hover": {
+                                backgroundColor: "var(--bg-hover)",
+                            },
+                        },
+                        "& > li[aria-selected]": {
+                            backgroundColor: "var(--accent-subtle)",
+                            color: "var(--accent)",
+                        },
+                    },
+                },
+                ".cm-tooltip": {
+                    zIndex: "1000",
+                },
             }),
             wrapCompartment.of(EditorView.lineWrapping),
         ],
@@ -142,9 +174,12 @@ export function mountMD(
         },
         setWrap: (enabled: boolean) => {
             view.dispatch({
-                effects: wrapCompartment.reconfigure(enabled ? EditorView.lineWrapping : []),
+                effects: wrapCompartment.reconfigure(
+                    enabled ? EditorView.lineWrapping : [],
+                ),
             });
         },
+        triggerCompletion: () => startCompletion(view),
         destroy: () => view.destroy(),
     };
 }
