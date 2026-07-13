@@ -16,6 +16,7 @@ import CreateWorkspaceModal from "./CreateWorkspaceModal";
 import FolderTree from "./FolderTree";
 import { useAuth } from "../hooks/useAuth";
 import { useVaultStore } from "../store/vaultStore";
+import Breadcrumbs from "./Breadcrumbs";
 
 const navItems = [
     { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
@@ -277,6 +278,7 @@ export default function AppLayout() {
                     } as React.CSSProperties
                 }
             >
+                <Breadcrumbs/>
                 <Outlet />
             </main>
         </div>
