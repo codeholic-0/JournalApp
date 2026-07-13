@@ -1,9 +1,7 @@
 import { useState, useRef, useEffect } from "react";
-import { ChevronDown, Plus, Check, Inbox } from "lucide-react";
+import { ChevronDown, Plus, Check} from "lucide-react";
 import { useWorkspaces } from "../hooks/useWorkspaces";
 import { useVaultStore } from "../store/vaultStore";
-import { useQuery } from "@tanstack/react-query";
-import { getInternalWorkspace } from "../api/workspaces";
 interface WorkspaceSwitcherProps {
     onNewWorkspace: () => void;
 }
@@ -17,10 +15,6 @@ export default function WorkspaceSwitcher({
     const currentId = useVaultStore((s) => s.currentWorkspaceId);
     const setCurrentId = useVaultStore((s) => s.setCurrentWorkspaceId);
     const { data: workspaces } = useWorkspaces(sort);
-    const { data: internal } = useQuery({
-        queryKey: ["workspace", "internal"],
-        queryFn: getInternalWorkspace,
-    });
 
     useEffect(() => {
         function handleClick(e: MouseEvent) {
@@ -70,24 +64,6 @@ export default function WorkspaceSwitcher({
                         </button>
                     ))}
 
-                    {internal && (
-                        <button
-                            onClick={() => {
-                                setCurrentId(internal.id);
-                                setOpen(false);
-                            }}
-                            className={`flex items-center gap-3 w-full px-3 py-2 text-sm text-left transition-colors ${
-                                internal.id === currentId
-                                    ? "bg-primary/10 text-primary"
-                                    : "text-on-surface-muted hover:bg-hover"
-                            }`}
-                        >
-                            <Inbox size={16} />
-                            <span className="truncate flex-1">
-                                Unfiled notes
-                            </span>
-                        </button>
-                    )}
                     <div className="border-t border-outline mt-1 pt-1">
                         <button
                             onClick={() => {

@@ -7,11 +7,10 @@ import type {
 
 export const useWorkspaces = (
     sort: string = "sortOrder",
-    includeInternal: boolean = false,
 ) =>
     useQuery({
-        queryKey: ["workspaces", sort, includeInternal],
-        queryFn: () => workspacesApi.getWorkspaces(sort, includeInternal),
+        queryKey: ["workspaces", sort],
+        queryFn: () => workspacesApi.getWorkspaces(sort),
     });
 
 export const useWorkspace = (id: string) =>

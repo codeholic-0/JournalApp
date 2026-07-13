@@ -8,21 +8,15 @@ import type {
 
 export const getWorkspaces = async (
     sort: string = "sortOrder",
-    includeInternal: boolean = false,
 ): Promise<WorkspaceResponse[]> => {
     const { data } = await api.get(
-        `/api/workspaces?sort=${sort}&includeInternal=${includeInternal}`,
+        `/api/workspaces?sort=${sort}`,
     );
     return data;
 };
 
 export const getWorkspace = async (id: string): Promise<WorkspaceResponse> => {
     const { data } = await api.get(`/api/workspaces/${id}`);
-    return data;
-};
-
-export const getInternalWorkspace = async (): Promise<WorkspaceResponse> => {
-    const { data } = await api.get("/api/workspaces/internal");
     return data;
 };
 
