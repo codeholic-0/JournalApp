@@ -7,13 +7,21 @@ export const useNotes = (
     page: number = 0,
     workspaceId?: string,
     folderId?: string,
+    unfiled?: boolean,
 ) =>
     useQuery({
-        queryKey: ["notes", username, page, workspaceId, folderId],
+        queryKey: ["notes", username, page, workspaceId, folderId, unfiled],
         queryFn: () =>
-            notesApi.getNotes(username, page, 10, workspaceId, folderId),
+            notesApi.getNotes(username, page, 10, workspaceId, folderId, unfiled),
         enabled: !!username,
         placeholderData: (previousData) => previousData,
+    });
+
+export const useUnfiledCount = (username: string, workspaceId?: string) =>
+    useQuery({
+        queryKey: ["unfiledCount", username, workspaceId],
+        queryFn: () => notesApi.getUnfiledCount(username, workspaceId),
+        enabled: !!username,
     });
 
 export const useNote = (username: string, id: string) =>
@@ -215,8 +223,11 @@ export const useUpdateSortOrder = () => {
             username,
             id,
             sortOrder,
-        }: { username: string; id: string; sortOrder: string }) =>
-            notesApi.updateSortOrder(username, id, sortOrder),
+        }: {
+            username: string;
+            id: string;
+            sortOrder: string;
+        }) => notesApi.updateSortOrder(username, id, sortOrder),
         onSuccess: (_data, { username }) => {
             qc.invalidateQueries({ queryKey: ["notes", username] });
         },

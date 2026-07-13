@@ -5,6 +5,7 @@ import {
     ChevronDown,
     Folder,
     Inbox,
+    Archive,
     Plus,
     MoreHorizontal,
     Pencil,
@@ -14,6 +15,8 @@ import {
 } from "lucide-react";
 import { useVaultStore } from "../store/vaultStore";
 import { useFolders } from "../hooks/useFolders";
+import { useUnfiledCount } from "../hooks/useNotes";
+import { useAuth } from "../hooks/useAuth";
 import FolderDialogs from "./FolderDialogs";
 import type { FolderResponse } from "../types/folder";
 
@@ -28,11 +31,16 @@ export default function FolderTree() {
     const workspaceId = useVaultStore((s) => s.currentWorkspaceId);
     const currentFolderId = useVaultStore((s) => s.currentFolderId);
     const setCurrentFolderId = useVaultStore((s) => s.setCurrentFolderId);
+    const showUnfiled = useVaultStore((s) => s.showUnfiled);
+    const setShowUnfiled = useVaultStore((s) => s.setShowUnfiled);
     const expandedFolders = useVaultStore((s) => s.expandedFolders);
     const toggleExpanded = useVaultStore((s) => s.toggleFolderExpanded);
     const sort = useVaultStore((s) => s.workspaceSort);
+    const { user } = useAuth();
+    const username = user?.username ?? "";
 
     const { data: folders } = useFolders(workspaceId ?? "", sort);
+    const { data: unfiledCount } = useUnfiledCount(username, workspaceId ?? undefined);
 
     const [dialogMode, setDialogMode] = useState<Mode>(null);
     const [dialogTarget, setDialogTarget] = useState<FolderResponse | null>(
@@ -137,17 +145,35 @@ export default function FolderTree() {
                     <Plus size={14} />
                 </button>
             </div>
-            {/* Unfiled */}
+            {/* All Notes */}
             <button
-                onClick={() => setCurrentFolderId(null)}
+                onClick={() => {
+                    setCurrentFolderId(null);
+                    setShowUnfiled(false);
+                }}
                 className={`flex items-center gap-2 w-full px-3 py-1.5 text-sm text-left transition-colors ${
-                    currentFolderId === null
+                    currentFolderId === null && !showUnfiled
                         ? "bg-primary/10 text-primary"
                         : "text-on-surface-muted"
                 }`}
             >
                 <Inbox size={14} />
-                <span className="truncate">Unfiled</span>
+                <span className="truncate">All Notes</span>
+            </button>
+            {/* Unfiled */}
+            <button
+                onClick={() => setShowUnfiled(true)}
+                className={`flex items-center gap-2 w-full px-3 py-1.5 text-sm text-left transition-colors ${
+                    showUnfiled
+                        ? "bg-primary/10 text-primary"
+                        : "text-on-surface-muted"
+                }`}
+            >
+                <Archive size={14} />
+                <span className="truncate flex-1">Unfiled</span>
+                {unfiledCount !== undefined && (
+                    <span className="text-xs text-on-surface-muted">{unfiledCount}</span>
+                )}
             </button>
             {rootFolders.map((f) => renderFolder(f))}
 

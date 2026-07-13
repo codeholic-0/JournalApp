@@ -31,6 +31,17 @@ public interface NoteRepository extends MongoRepository<Note, String> {
         Page<Note> findByUsernameAndDeletedAtIsNullOrderBySortOrderAscCreatedAtDesc(
                         String username, Pageable pageable);
 
+        Page<Note> findByUsernameAndWorkspaceIdAndFolderIdIsNullAndDeletedAtIsNullOrderBySortOrderAscCreatedAtDesc(
+                        String username, String workspaceId, Pageable pageable);
+
+        long countByUsernameAndWorkspaceIdAndFolderIdIsNullAndDeletedAtIsNull(
+                        String username, String workspaceId);
+
+        Page<Note> findByUsernameAndFolderIdIsNullAndDeletedAtIsNullOrderBySortOrderAscCreatedAtDesc(
+                        String username, Pageable pageable);
+
+        long countByUsernameAndFolderIdIsNullAndDeletedAtIsNull(String username);
+
         List<Note> findByWorkspaceId(String workspaceId);
 
         void deleteByWorkspaceId(String workspaceId);

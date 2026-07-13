@@ -17,6 +17,7 @@ interface VaultState {
     sidebarWidth: number;
     sectionCollapse: Record<string, boolean>;
     dashboardView: "grid" | "list";
+    showUnfiled: boolean;
 
     setCurrentFolderId: (id: string | null) => void;
     setCurrentWorkspaceId: (id: string | null) => void;
@@ -32,6 +33,7 @@ interface VaultState {
     setSidebarWidth: (width: number) => void;
     toggleSection: (section: string) => void;
     setDashboardView: (view: "grid" | "list") => void;
+    setShowUnfiled: (show: boolean) => void;
 }
 
 function getInitialSidebarWidth(): number {
@@ -61,6 +63,7 @@ export const useVaultStore = create<VaultState>()(
             sidebarWidth: getInitialSidebarWidth(),
             sectionCollapse: {},
             dashboardView: "grid",
+            showUnfiled: false,
 
             setCurrentWorkspaceId: (id) => set({ currentWorkspaceId: id }),
             setCurrentFolderId: (id) => set({ currentFolderId: id }),
@@ -98,6 +101,11 @@ export const useVaultStore = create<VaultState>()(
                     },
                 })),
             setDashboardView: (view) => set({ dashboardView: view }),
+            setShowUnfiled: (show) =>
+                set((state) => ({
+                    showUnfiled: show,
+                    currentFolderId: show ? null : state.currentFolderId,
+                })),
         }),
         {
             name: "vault-storage",

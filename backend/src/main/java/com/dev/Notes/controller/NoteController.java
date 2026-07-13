@@ -63,9 +63,24 @@ public class NoteController {
             @PathVariable String username,
             @RequestParam(required = false) String workspaceId,
             @RequestParam(required = false) String folderId,
+            @RequestParam(required = false, defaultValue = "false") boolean unfiled,
             @PageableDefault(size = 10) Pageable pageable) {
-        var res = noteService.getNotesByUsername(username, workspaceId, folderId, pageable);
-        return ResponseEntity.ok(res);
+
+        if (unfiled) {
+            var res = noteService.getUnfiledNotes(username, workspaceId, pageable);
+            return ResponseEntity.ok(res);
+        } else {
+            var res = noteService.getNotesByUsername(username, workspaceId, folderId, pageable);
+            return ResponseEntity.ok(res);
+        }
+    }
+
+    @GetMapping("/unfiled/count")
+    public ResponseEntity<Long> getUnfiledCount(
+            @PathVariable String username,
+            @RequestParam(required = false) String workspaceId) {
+        long count = noteService.getUnfiledCount(username, workspaceId);
+        return ResponseEntity.ok(count);
     }
 
     @Operation(summary = "Update note", description = "Update an existing note entry (partial update)")

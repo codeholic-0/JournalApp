@@ -170,6 +170,28 @@ public class NoteService {
                 .map(this::toNoteResponse);
     }
 
+    public Page<NoteResponse> getUnfiledNotes(String username, String workspaceId, Pageable pageable) {
+        if (!userRepository.existsByUsername(username)) {
+            throw new ResourceNotFoundException("User not found: " + username);
+        }
+        if (workspaceId != null) {
+            return noteRepository
+                    .findByUsernameAndWorkspaceIdAndFolderIdIsNullAndDeletedAtIsNullOrderBySortOrderAscCreatedAtDesc(
+                            username, workspaceId, pageable)
+                    .map(this::toNoteResponse);
+        }
+        return noteRepository
+                .findByUsernameAndFolderIdIsNullAndDeletedAtIsNullOrderBySortOrderAscCreatedAtDesc(username, pageable)
+                .map(this::toNoteResponse);
+    }
+
+    public long getUnfiledCount(String username, String workspaceId) {
+        if (workspaceId != null)
+            return noteRepository.countByUsernameAndWorkspaceIdAndFolderIdIsNullAndDeletedAtIsNull(username,
+                    workspaceId);
+        return noteRepository.countByUsernameAndFolderIdIsNullAndDeletedAtIsNull(username);
+    }
+
     @Transactional
     public NoteResponse updateNote(
             String username,

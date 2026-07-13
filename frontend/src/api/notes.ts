@@ -7,10 +7,22 @@ export const getNotes = async (
     size: number = 10,
     workspaceId?: string,
     folderId?: string,
+    unfiled?: boolean,
 ): Promise<PagedResponse<NoteResponse>> => {
     let url = `/api/users/${username}/notes?page=${page}&size=${size}`;
     if (workspaceId) url += `&workspaceId=${workspaceId}`;
     if (folderId) url += `&folderId=${folderId}`;
+    if (unfiled) url += `&unfiled=true`;
+    const { data } = await api.get(url);
+    return data;
+};
+
+export const getUnfiledCount = async (
+    username: string,
+    workspaceId?: string,
+): Promise<number> => {
+    let url = `/api/users/${username}/notes/unfiled/count`;
+    if (workspaceId) url += `?workspaceId=${workspaceId}`;
     const { data } = await api.get(url);
     return data;
 };
