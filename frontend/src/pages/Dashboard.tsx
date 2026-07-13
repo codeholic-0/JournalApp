@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
     FileText,
@@ -12,8 +12,12 @@ import {
     Star,
     Pin,
     FolderOpen,
+    GripVertical,
 } from "lucide-react";
 import { toast } from "sonner";
+import { DndContext, type DragEndEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { SortableContext, rectSortingStrategy, useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { useAuth } from "../hooks/useAuth";
 import { SkeletonCard } from "../components/Skeleton";
 import ConfirmDialog from "../components/ConfirmDialog";
@@ -23,8 +27,110 @@ import {
     useDeleteNote,
     useToggleFavorite,
     useTogglePin,
+    useUpdateSortOrder,
 } from "../hooks/useNotes";
 import { useVaultStore } from "../store/vaultStore";
+import type { NoteResponse } from "../types/note";
+import { generateSortOrder } from "../lib/fractionalIndex";
+
+function SortableNoteCard({
+    note,
+    username,
+    onDelete,
+}: {
+    note: NoteResponse;
+    username: string;
+    onDelete: (note: NoteResponse) => void;
+}) {
+    const toggleFav = useToggleFavorite();
+    const togglePin = useTogglePin();
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: note.id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+        zIndex: isDragging ? 999 : "auto" as const,
+    };
+
+    return (
+        <div
+            ref={setNodeRef}
+            style={{ ...style, padding: "var(--card-p)" }}
+            className="group bg-surface-alt rounded-xl border border-outline space-y-3 hover:scale-[1.02] hover:shadow-md transition-all duration-200"
+        >
+            <div className="flex items-start gap-3">
+                <button
+                    {...attributes}
+                    {...listeners}
+                    className="p-0.5 mt-0.5 cursor-grab active:cursor-grabbing text-on-surface-muted hover:text-on-surface transition-colors touch-none"
+                    aria-label="Drag to reorder"
+                >
+                    <GripVertical size={16} />
+                </button>
+                <FileText size={18} className="text-primary shrink-0 mt-0.5" />
+                <div className="min-w-0 flex-1">
+                    <h2 className="font-semibold text-on-surface truncate">
+                        {note.title}
+                    </h2>
+                </div>
+                <NoteTypeBadge type={note.noteType} />
+            </div>
+
+            <div className="flex items-center gap-1 shrink-0">
+                <button onClick={() => toggleFav.mutate({ username, id: note.id })}>
+                    {note.favorite ? (
+                        <Star size={16} className="text-amber-400 fill-amber-400" />
+                    ) : (
+                        <Star size={16} />
+                    )}
+                </button>
+                <button onClick={() => togglePin.mutate({ username, id: note.id })}>
+                    {note.pinned ? (
+                        <Pin size={16} className="text-primary fill-primary" />
+                    ) : (
+                        <Pin size={16} />
+                    )}
+                </button>
+            </div>
+
+            {note.content && (
+                <p className="text-sm text-on-surface-muted line-clamp-2 leading-relaxed">
+                    {note.content}
+                </p>
+            )}
+
+            <div className="flex items-center gap-1.5 text-xs text-on-surface-muted">
+                <Calendar size={12} />
+                <span>{new Date(note.createdAt).toLocaleDateString()}</span>
+            </div>
+
+            <div className="flex items-center justify-between pt-1">
+                <div className="flex gap-3">
+                    <Link
+                        to={`/notes/${note.id}`}
+                        className="flex items-center gap-1 text-xs text-on-surface-muted hover:text-primary transition-colors"
+                    >
+                        <Eye size={14} /> View
+                    </Link>
+                    <Link
+                        to={`/notes/${note.id}/edit`}
+                        className="flex items-center gap-1 text-xs text-on-surface-muted hover:text-primary transition-colors"
+                    >
+                        <Pencil size={14} /> Edit
+                    </Link>
+                </div>
+                <button
+                    onClick={() => onDelete(note)}
+                    className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 font-medium transition-colors"
+                >
+                    <Trash2 size={14} /> Delete
+                </button>
+            </div>
+        </div>
+    );
+}
+
 export default function Dashboard() {
     const { user } = useAuth();
     const username = user?.username ?? "";
@@ -39,13 +145,52 @@ export default function Dashboard() {
     );
 
     const deleteNote = useDeleteNote();
+    const updateSortOrder = useUpdateSortOrder();
     const [deleteTarget, setDeleteTarget] = useState<{
         id: string;
         title: string;
     } | null>(null);
     const [showFavorites, setShowFavorites] = useState(false);
-    const toggleFav = useToggleFavorite();
-    const togglePin = useTogglePin();
+
+    const sensors = useSensors(
+        useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    );
+
+    const notes = data?.content ?? [];
+    const displayNotes = showFavorites
+        ? notes.filter((n) => n.favorite)
+        : notes;
+    const totalPages = data?.page?.totalPages ?? 0;
+
+    const handleDragEnd = useCallback(
+        (event: DragEndEvent) => {
+            const { active, over } = event;
+            if (!over || active.id === over.id) return;
+
+            const items = displayNotes.filter((n) => n.id !== active.id);
+            const overIndex = items.findIndex((n) => n.id === over.id);
+            if (overIndex === -1) return;
+            const dragged = displayNotes.find((n) => n.id === active.id);
+            if (!dragged) return;
+            items.splice(overIndex, 0, dragged);
+
+            const idx = items.findIndex((n) => n.id === active.id);
+            const before = idx > 0 ? items[idx - 1].sortOrder ?? null : null;
+            const after =
+                idx < items.length - 1
+                    ? items[idx + 1].sortOrder ?? null
+                    : null;
+
+            const newSortOrder = generateSortOrder(before, after);
+
+            updateSortOrder.mutate({
+                username,
+                id: String(active.id),
+                sortOrder: newSortOrder,
+            });
+        },
+        [displayNotes, username, updateSortOrder],
+    );
 
     if (!currentWorkspaceId) {
         return (
@@ -57,12 +202,6 @@ export default function Dashboard() {
             </div>
         );
     }
-
-    const notes = data?.content ?? [];
-    const displayNotes = showFavorites
-        ? notes.filter((n) => n.favorite)
-        : notes;
-    const totalPages = data?.page?.totalPages ?? 0;
 
     const handleDelete = async () => {
         if (!deleteTarget) return;
@@ -152,110 +291,28 @@ export default function Dashboard() {
                 )
             ) : (
                 <>
-                    <div className="grid sm:grid-cols-2 lg:grid-cols-3" style={{ gap: "var(--grid-gap)" }}>
-                        {displayNotes.map((j) => (
-                            <div
-                                key={j.id}
-                                className="group bg-surface-alt rounded-xl border border-outline space-y-3 hover:scale-[1.02] hover:shadow-md transition-all duration-200" style={{ padding: "var(--card-p)" }}
-                            >
-                                <div className="flex items-start gap-3">
-                                    <FileText
-                                        size={18}
-                                        className="text-primary shrink-0 mt-0.5"
-                                    />
-                                    <div className="min-w-0 flex-1">
-                                        <h2 className="font-semibold text-on-surface truncate">
-                                            {j.title}
-                                        </h2>
-                                    </div>
-                                    <NoteTypeBadge type={j.noteType} />
-                                </div>
-
-                                <div className="flex items-center gap-1 shrink-0">
-                                    <button
-                                        onClick={() =>
-                                            toggleFav.mutate({
-                                                username,
-                                                id: j.id,
-                                            })
-                                        }
-                                    >
-                                        {j.favorite ? (
-                                            <Star
-                                                size={16}
-                                                className="text-amber-400 fill-amber-400"
-                                            />
-                                        ) : (
-                                            <Star size={16} />
-                                        )}
-                                    </button>
-                                    <button
-                                        onClick={() =>
-                                            togglePin.mutate({
-                                                username,
-                                                id: j.id,
-                                            })
-                                        }
-                                    >
-                                        {j.pinned ? (
-                                            <Pin
-                                                size={16}
-                                                className="text-primary fill-primary"
-                                            />
-                                        ) : (
-                                            <Pin size={16} />
-                                        )}
-                                    </button>
-                                </div>
-
-                                {j.content && (
-                                    <p className="text-sm text-on-surface-muted line-clamp-2 leading-relaxed">
-                                        {j.content}
-                                    </p>
-                                )}
-
-                                <div className="flex items-center gap-1.5 text-xs text-on-surface-muted">
-                                    <Calendar size={12} />
-                                    <span>
-                                        {new Date(
-                                            j.createdAt,
-                                        ).toLocaleDateString()}
-                                    </span>
-                                </div>
-
-                                <div className="flex items-center justify-between pt-1">
-                                    <div className="flex gap-3">
-                                        <Link
-                                            to={`/notes/${j.id}`}
-                                            className="flex items-center gap-1 text-xs text-on-surface-muted hover:text-primary transition-colors"
-                                        >
-                                            <Eye size={14} />
-                                            View
-                                        </Link>
-                                        <Link
-                                            to={`/notes/${j.id}/edit`}
-                                            className="flex items-center gap-1 text-xs text-on-surface-muted hover:text-primary transition-colors"
-                                        >
-                                            <Pencil size={14} />
-                                            Edit
-                                        </Link>
-                                    </div>
-                                    <button
-                                        onClick={() =>
+                    <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+                        <SortableContext
+                            items={displayNotes.map((n) => n.id)}
+                            strategy={rectSortingStrategy}
+                        >
+                            <div className="grid sm:grid-cols-2 lg:grid-cols-3" style={{ gap: "var(--grid-gap)" }}>
+                                {displayNotes.map((j) => (
+                                    <SortableNoteCard
+                                        key={j.id}
+                                        note={j}
+                                        username={username}
+                                        onDelete={(note) =>
                                             setDeleteTarget({
-                                                id: j.id,
-                                                title: j.title,
+                                                id: note.id,
+                                                title: note.title,
                                             })
                                         }
-                                        className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 font-medium transition-colors"
-                                    >
-                                        <Trash2 size={14} />
-                                        Delete
-                                    </button>
-                                </div>
+                                    />
+                                ))}
                             </div>
-                        ))}
-                    </div>
+                        </SortableContext>
+                    </DndContext>
 
                     {totalPages > 1 && (
                         <div className="flex items-center justify-center gap-4 pt-4">

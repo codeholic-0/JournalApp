@@ -8,6 +8,7 @@ export interface NoteResponse {
     contentJson?: Record<string, unknown> | null;
     createdAt: string;
     updatedAt: string;
+    sortOrder?: string;
 }
 
 export interface NoteRequest {

@@ -102,3 +102,15 @@ export const togglePin = async (
     );
     return data;
 };
+
+export const updateSortOrder = async (
+    username: string,
+    id: string,
+    sortOrder: string,
+): Promise<NoteResponse> => {
+    const { data } = await api.patch<NoteResponse>(
+        `/api/users/${username}/notes/${id}/sort-order`,
+        { sortOrder },
+    );
+    return data;
+};

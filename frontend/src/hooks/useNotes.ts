@@ -208,6 +208,21 @@ export const useTogglePin = () => {
     });
 };
 
+export const useUpdateSortOrder = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({
+            username,
+            id,
+            sortOrder,
+        }: { username: string; id: string; sortOrder: string }) =>
+            notesApi.updateSortOrder(username, id, sortOrder),
+        onSuccess: (_data, { username }) => {
+            qc.invalidateQueries({ queryKey: ["notes", username] });
+        },
+    });
+};
+
 export const useAutosaveNote = () => {
     const qc = useQueryClient();
     return useMutation({
