@@ -27,6 +27,7 @@ import {
 import { languages } from "@codemirror/language-data";
 import { tags } from "@lezer/highlight";
 import { slashMenu } from "./extensions/slashMenu";
+import { headingStateField, scrollToHeading, type Heading } from "./extensions/outline";
 
 const mdHighlightStyle = HighlightStyle.define([
     { tag: tags.heading, class: "font-bold" },
@@ -59,10 +60,12 @@ export interface EditorAPI {
     setWrap: (enabled: boolean) => void;
     triggerCompletion: () => void;
     destroy: () => void;
+    scrollTo: (pos: number) => void;
 }
 
 export interface MountMDOpts {
     onDocChange?: (value: string) => void;
+    onHeadingsChange?: (headings: Heading[]) => void;
 }
 
 export function mountMD(
@@ -73,6 +76,7 @@ export function mountMD(
     const updateListener = EditorView.updateListener.of((update) => {
         if (update.docChanged) {
             opts?.onDocChange?.(update.state.doc.toString());
+            opts?.onHeadingsChange?.(update.state.field(headingStateField));
         }
     });
 
@@ -88,6 +92,7 @@ export function mountMD(
             bracketMatching(),
             closeBrackets(),
             autocompletion({ override: [slashMenu] }),
+            headingStateField,
             indentOnInput(),
             history(),
             highlightCompartment.of(syntaxHighlighting(mdHighlightStyle)),
@@ -180,6 +185,7 @@ export function mountMD(
             });
         },
         triggerCompletion: () => startCompletion(view),
+        scrollTo: (pos: number) => scrollToHeading(view, pos),
         destroy: () => view.destroy(),
     };
 }

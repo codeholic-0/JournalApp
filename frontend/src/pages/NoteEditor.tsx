@@ -10,6 +10,7 @@ import {
     Eye,
     WrapText,
     Plus,
+    List,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -19,6 +20,7 @@ import { useMdEditor } from "../hooks/useMdEditor";
 import type { NoteDraft, NoteType } from "../types/note";
 import { useDebouncedCallback } from "../hooks/useDebouncedCallback";
 import { useVaultStore } from "../store/vaultStore";
+import EditorOutline from "../components/EditorOutline";
 
 const schema = z.object({
     title: z.string().min(1, "Title is required"),
@@ -53,6 +55,7 @@ export default function NoteEditor() {
     const dirtyRef = useRef(false);
     const lastSavedRef = useRef("");
     const [wrapped, setWrapped] = useState(true);
+    const [showOutline, setShowOutline] = useState(false);
 
     const getDebouncedSaveRef = useRef<() => void>(() => {});
 
@@ -64,6 +67,8 @@ export default function NoteEditor() {
         setWrap,
         stats,
         triggerCompletion,
+        headings,
+        scrollTo,
     } = useMdEditor({
         onDocChange: () => {
             dirtyRef.current = true;
@@ -197,10 +202,20 @@ export default function NoteEditor() {
                     </select>
                 </div>
 
-                <div
-                    ref={editorRef}
-                    className="min-h-100 border border-outline rounded-lg p-3 focus-within:ring-1 focus-within:ring-primary"
-                />
+                <div className="relative">
+                    <div
+                        ref={editorRef}
+                        className="min-h-100 border border-outline rounded-lg p-3 focus-within:ring-1 focus-within:ring-primary"
+                    />
+                    {showOutline && headings.length > 0 && (
+                        <EditorOutline
+                            headings={headings}
+                            words={stats.words}
+                            onHeadingClick={scrollTo}
+                            onClose={() => setShowOutline(false)}
+                        />
+                    )}
+                </div>
 
                 <div className="flex items-center justify-between border border-outline rounded-lg px-3 py-1.5 text-xs text-on-surface-muted">
                     <button
@@ -223,10 +238,25 @@ export default function NoteEditor() {
                         type="button"
                         onClick={triggerCompletion}
                         className="flex items-center gap-1.5 px-2 py-1 rounded hover:bg-hover transition-colors"
-                        title="Insert block (/s)"
+                        title="Insert block (/)"
                     >
                         <Plus size={14} />
                     </button>
+
+                    {headings.length > 0 && (
+                        <button
+                            type="button"
+                            onClick={() => setShowOutline(!showOutline)}
+                            className={`flex items-center gap-1.5 px-2 py-1 rounded transition-colors ${
+                                showOutline
+                                    ? "bg-primary/10 text-primary"
+                                    : "hover:bg-hover"
+                            }`}
+                            title="Outline"
+                        >
+                            <List size={14} />
+                        </button>
+                    )}
 
                     <div className="flex items-center gap-3">
                         <span>{stats.words} words</span>

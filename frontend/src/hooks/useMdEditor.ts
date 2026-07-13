@@ -7,6 +7,7 @@ import {
 } from "react";
 import { mountMD, type EditorAPI, type MountMDOpts } from "../editor/mdEditor";
 import { useDebouncedCallback } from "./useDebouncedCallback";
+import type { Heading } from "../editor/extensions/outline";
 
 export function useMdEditor(opts?: MountMDOpts) {
     const editorRef = useRef<HTMLDivElement>(null);
@@ -14,6 +15,7 @@ export function useMdEditor(opts?: MountMDOpts) {
     const optsRef = useRef(opts);
     const [ready, setReady] = useState(false);
     const [stats, setStats] = useState({ words: 0, chars: 0 });
+    const [headings, setHeadings] = useState<Heading[]>([]);
     useLayoutEffect(() => {
         optsRef.current = opts;
     });
@@ -32,6 +34,9 @@ export function useMdEditor(opts?: MountMDOpts) {
             onDocChange: (value) => {
                 updateStats(value);
                 optsRef.current?.onDocChange?.(value);
+            },
+            onHeadingsChange: (h) => {
+                setHeadings(h);
             },
         });
         setReady(true);
@@ -56,5 +61,9 @@ export function useMdEditor(opts?: MountMDOpts) {
         apiRef.current?.triggerCompletion();
     }, []);
 
-    return { editorRef, getValue, setValue, ready, setWrap, stats, triggerCompletion };
+    const scrollTo = useCallback((pos: number) => {
+        apiRef.current?.scrollTo(pos);
+    }, []);
+
+    return { editorRef, getValue, setValue, ready, setWrap, stats, triggerCompletion, headings, scrollTo };
 }
