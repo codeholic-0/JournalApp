@@ -44,11 +44,13 @@ const mdHighlightStyle = HighlightStyle.define([
 ]);
 
 const highlightCompartment = new Compartment();
+const wrapCompartment = new Compartment();
 
 export interface EditorAPI {
     view: EditorView;
     getValue: () => string;
     setValue: (val: string) => void;
+    setWrap: (enabled: boolean) => void;
     destroy: () => void;
 }
 
@@ -124,7 +126,7 @@ export function mountMD(
                     outline: "1px solid var(--color-outline)",
                 },
             }),
-            EditorView.lineWrapping,
+            wrapCompartment.of(EditorView.lineWrapping),
         ],
     });
 
@@ -136,6 +138,11 @@ export function mountMD(
         setValue: (val: string) => {
             view.dispatch({
                 changes: { from: 0, to: view.state.doc.length, insert: val },
+            });
+        },
+        setWrap: (enabled: boolean) => {
+            view.dispatch({
+                effects: wrapCompartment.reconfigure(enabled ? EditorView.lineWrapping : []),
             });
         },
         destroy: () => view.destroy(),

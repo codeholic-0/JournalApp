@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowLeft, FileText, Loader2, Eye } from "lucide-react";
+import { ArrowLeft, FileText, Loader2, Eye, WrapText } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "../hooks/useAuth";
@@ -45,10 +45,11 @@ export default function NoteEditor() {
         useState<AutoSaveStatus>("idle");
     const dirtyRef = useRef(false);
     const lastSavedRef = useRef("");
+    const [wrapped, setWrapped] = useState(true);
 
     const getDebouncedSaveRef = useRef<() => void>(() => {});
 
-    const { editorRef, getValue, setValue, ready } = useMdEditor({
+    const { editorRef, getValue, setValue, ready, setWrap, stats } = useMdEditor({
         onDocChange: () => {
             dirtyRef.current = true;
             getDebouncedSaveRef.current();
@@ -185,6 +186,23 @@ export default function NoteEditor() {
                     ref={editorRef}
                     className="min-h-100 border border-outline rounded-lg p-3 focus-within:ring-1 focus-within:ring-primary"
                 />
+
+                <div className="flex items-center justify-between border border-outline rounded-lg px-3 py-1.5 text-xs text-on-surface-muted">
+                    <button
+                        type="button"
+                        onClick={() => { setWrapped(!wrapped); setWrap(!wrapped); }}
+                        className={`flex items-center gap-1.5 px-2 py-1 rounded transition-colors ${
+                            wrapped ? "bg-primary/10 text-primary" : "hover:bg-hover"
+                        }`}
+                    >
+                        <WrapText size={14} />
+                        Wrap
+                    </button>
+                    <div className="flex items-center gap-3">
+                        <span>{stats.words} words</span>
+                        <span>{stats.chars} chars</span>
+                    </div>
+                </div>
 
                 <div className="flex items-center gap-3 pt-2">
                     <div className="flex gap-3">
