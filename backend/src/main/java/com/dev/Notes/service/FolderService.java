@@ -1,5 +1,6 @@
 package com.dev.Notes.service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -186,18 +187,17 @@ public class FolderService {
             String path = folder.getMaterializedPath();
             List<Folder> descendants = folderRepository
                     .findByWorkspaceIdAndMaterializedPathStartingWith(workspaceId, path + "/");
+
             List<String> allFolderIds = new ArrayList<>(descendants.stream().map(f -> f.getId()).toList());
             allFolderIds.add(folderId);
 
-            Query orphanNotes = Query.query(
+            Query softDeleteNotes = Query.query(
                     Criteria.where("workspaceId").is(workspaceId)
-                            .and("folderId").in(allFolderIds));
-            mongoTemplate.updateMulti(orphanNotes, new Update().unset("folderId"), Note.class);
+                            .and("folderId").in(allFolderIds)
+                            .and("deletedAt").isNull());
+            mongoTemplate.updateMulti(softDeleteNotes, new Update().set("deletedAt", LocalDateTime.now()), Note.class);
 
-            Query orphanDirectChildren = Query.query(
-                    Criteria.where("workspaceId").is(workspaceId)
-                            .and("parentId").is(folderId));
-            mongoTemplate.updateMulti(orphanDirectChildren, new Update().unset("parentId"), Folder.class);
+            folderRepository.deleteAll(descendants);
         }
 
         folderRepository.delete(folder);

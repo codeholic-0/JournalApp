@@ -41,7 +41,9 @@ export const useDeleteFolder = (workspaceId: string) => {
     return useMutation({
         mutationFn: ({ id, force }: { id: string; force?: boolean }) =>
             foldersApi.deleteFolder(workspaceId, id, force),
-        onSuccess: () =>
-            qc.invalidateQueries({ queryKey: ["folders", workspaceId] }),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ["folders", workspaceId] });
+            qc.invalidateQueries({ queryKey: ["unfiledCount"] });
+        },
     });
 };
