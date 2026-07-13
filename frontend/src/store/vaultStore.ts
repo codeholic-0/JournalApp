@@ -16,6 +16,7 @@ interface VaultState {
     bulkMode: boolean;
     sidebarWidth: number;
     sectionCollapse: Record<string, boolean>;
+    dashboardView: "grid" | "list";
 
     setCurrentFolderId: (id: string | null) => void;
     setCurrentWorkspaceId: (id: string | null) => void;
@@ -30,6 +31,7 @@ interface VaultState {
     resetSelection: () => void;
     setSidebarWidth: (width: number) => void;
     toggleSection: (section: string) => void;
+    setDashboardView: (view: "grid" | "list") => void;
 }
 
 function getInitialSidebarWidth(): number {
@@ -58,6 +60,7 @@ export const useVaultStore = create<VaultState>()(
             bulkMode: false,
             sidebarWidth: getInitialSidebarWidth(),
             sectionCollapse: {},
+            dashboardView: "grid",
 
             setCurrentWorkspaceId: (id) => set({ currentWorkspaceId: id }),
             setCurrentFolderId: (id) => set({ currentFolderId: id }),
@@ -94,6 +97,7 @@ export const useVaultStore = create<VaultState>()(
                         [section]: !state.sectionCollapse[section],
                     },
                 })),
+            setDashboardView: (view) => set({ dashboardView: view }),
         }),
         {
             name: "vault-storage",
@@ -104,6 +108,7 @@ export const useVaultStore = create<VaultState>()(
                 workspaceSort: state.workspaceSort,
                 sidebarWidth: state.sidebarWidth,
                 sectionCollapse: state.sectionCollapse,
+                dashboardView: state.dashboardView,
             }),
             merge: (persisted, current) => {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any

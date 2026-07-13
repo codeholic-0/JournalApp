@@ -1,5 +1,5 @@
-import { useState, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { useState, useCallback, useEffect } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import {
     FileText,
     FilePlus2,
@@ -13,6 +13,8 @@ import {
     Pin,
     FolderOpen,
     GripVertical,
+    LayoutGrid,
+    List,
 } from "lucide-react";
 import { toast } from "sonner";
 import { DndContext, type DragEndEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
@@ -151,6 +153,26 @@ export default function Dashboard() {
         title: string;
     } | null>(null);
     const [showFavorites, setShowFavorites] = useState(false);
+    const [searchParams, setSearchParams] = useSearchParams();
+    const dashboardView = useVaultStore((s) => s.dashboardView);
+    const setDashboardView = useVaultStore((s) => s.setDashboardView);
+
+    useEffect(() => {
+        const view = searchParams.get("view");
+        if (view === "grid" || view === "list") {
+            setDashboardView(view);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const handleViewChange = (view: "grid" | "list") => {
+        setDashboardView(view);
+        setSearchParams((prev) => {
+            const next = new URLSearchParams(prev);
+            next.set("view", view);
+            return next;
+        });
+    };
 
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -249,22 +271,48 @@ export default function Dashboard() {
                     New Note
                 </Link>
             </div>
-            <button
-                onClick={() => setShowFavorites((p) => !p)}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors border ${
-                    showFavorites
-                        ? "bg-amber-50 border-amber-300 text-amber-700"
-                        : "border-outline text-on-surface-muted hover:text-on-surface hover:bg-hover"
-                }`}
-            >
-                <Star
-                    size={14}
-                    className={
-                        showFavorites ? "fill-amber-400 text-amber-400" : ""
-                    }
-                />
-                {showFavorites ? "All Notes" : "Favorites"}
-            </button>
+            <div className="flex items-center gap-2">
+                <button
+                    onClick={() => setShowFavorites((p) => !p)}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors border ${
+                        showFavorites
+                            ? "bg-amber-50 border-amber-300 text-amber-700"
+                            : "border-outline text-on-surface-muted hover:text-on-surface hover:bg-hover"
+                    }`}
+                >
+                    <Star
+                        size={14}
+                        className={
+                            showFavorites ? "fill-amber-400 text-amber-400" : ""
+                        }
+                    />
+                    {showFavorites ? "All Notes" : "Favorites"}
+                </button>
+                <div className="flex border border-outline rounded-lg overflow-hidden">
+                    <button
+                        onClick={() => handleViewChange("grid")}
+                        className={`p-2 transition-colors ${
+                            dashboardView === "grid"
+                                ? "bg-primary/10 text-primary"
+                                : "text-on-surface-muted hover:text-on-surface hover:bg-hover"
+                        }`}
+                        aria-label="Grid view"
+                    >
+                        <LayoutGrid size={16} />
+                    </button>
+                    <button
+                        onClick={() => handleViewChange("list")}
+                        className={`p-2 transition-colors ${
+                            dashboardView === "list"
+                                ? "bg-primary/10 text-primary"
+                                : "text-on-surface-muted hover:text-on-surface hover:bg-hover"
+                        }`}
+                        aria-label="List view"
+                    >
+                        <List size={16} />
+                    </button>
+                </div>
+            </div>
 
             {displayNotes.length === 0 && page === 0 ? (
                 showFavorites && notes.length > 0 ? (
@@ -296,6 +344,7 @@ export default function Dashboard() {
                             items={displayNotes.map((n) => n.id)}
                             strategy={rectSortingStrategy}
                         >
+                        {dashboardView === "grid" ? (
                             <div className="grid sm:grid-cols-2 lg:grid-cols-3" style={{ gap: "var(--grid-gap)" }}>
                                 {displayNotes.map((j) => (
                                     <SortableNoteCard
@@ -311,6 +360,23 @@ export default function Dashboard() {
                                     />
                                 ))}
                             </div>
+                        ) : (
+                            <div className="flex flex-col gap-2">
+                                {displayNotes.map((j) => (
+                                    <SortableNoteCard
+                                        key={j.id}
+                                        note={j}
+                                        username={username}
+                                        onDelete={(note) =>
+                                            setDeleteTarget({
+                                                id: note.id,
+                                                title: note.title,
+                                            })
+                                        }
+                                    />
+                                ))}
+                            </div>
+                        )}
                         </SortableContext>
                     </DndContext>
 
