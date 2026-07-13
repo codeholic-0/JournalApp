@@ -14,7 +14,6 @@ import {
     useDeleteFolder,
 } from "../hooks/useFolders";
 import IconColorPicker from "./IconColorPicker";
-import ConfirmDialog from "./ConfirmDialog";
 import type { FolderResponse } from "../types/folder";
 
 type Mode = "create" | "rename" | "move" | "restyle" | "delete" | null;
@@ -59,7 +58,6 @@ export default function FolderDialogs({
     );
     const [icon, setIcon] = useState(target?.icon ?? "folder");
     const [color, setColor] = useState(target?.color ?? "#1976d2");
-    const [deleteConfirm, setDeleteConfirm] = useState(false);
     const [forceDelete, setForceDelete] = useState(false);
 
     if (!mode) return null;
@@ -180,7 +178,6 @@ export default function FolderDialogs({
                 force: forceDelete,
             });
             toast.success("Folder deleted");
-            setDeleteConfirm(false);
             onClose();
         } catch {
             toast.error("Failed to delete folder");
@@ -389,7 +386,7 @@ export default function FolderDialogs({
                         )}
                         <div className="flex gap-3">
                             <button
-                                onClick={() => setDeleteConfirm(true)}
+                                onClick={handleDelete}
                                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors active:scale-[0.98] ${
                                     forceDelete
                                         ? "bg-red-600 hover:bg-red-700"
@@ -408,23 +405,6 @@ export default function FolderDialogs({
                     </div>
                 </Modal>
             )}
-
-            <ConfirmDialog
-                open={deleteConfirm}
-                onClose={() => {
-                    setDeleteConfirm(false);
-                    setForceDelete(false);
-                }}
-                onConfirm={handleDelete}
-                title="Delete folder?"
-                message={
-                    hasChildren
-                        ? `"${target?.name}" has sub-folders. Force-delete to orphan them?`
-                        : `Are you sure you want to delete "${target?.name}"?`
-                }
-                confirmLabel={forceDelete ? "Force Delete" : "Delete"}
-                variant={forceDelete ? "danger" : "default"}
-            />
         </>
     );
 }

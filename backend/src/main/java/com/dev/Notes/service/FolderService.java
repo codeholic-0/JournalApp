@@ -1,5 +1,6 @@
 package com.dev.Notes.service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.data.domain.Sort;
@@ -182,17 +183,21 @@ public class FolderService {
         }
 
         if (force) {
+            String path = folder.getMaterializedPath();
+            List<Folder> descendants = folderRepository
+                    .findByWorkspaceIdAndMaterializedPathStartingWith(workspaceId, path + "/");
+            List<String> allFolderIds = new ArrayList<>(descendants.stream().map(f -> f.getId()).toList());
+            allFolderIds.add(folderId);
+
             Query orphanNotes = Query.query(
                     Criteria.where("workspaceId").is(workspaceId)
-                            .and("folderId").is(folderId));
-            Update unsetFolder = new Update().unset("folderId");
-            mongoTemplate.updateMulti(orphanNotes, unsetFolder, Note.class);
+                            .and("folderId").in(allFolderIds));
+            mongoTemplate.updateMulti(orphanNotes, new Update().unset("folderId"), Note.class);
 
-            Query orphanChildren = Query.query(
+            Query orphanDirectChildren = Query.query(
                     Criteria.where("workspaceId").is(workspaceId)
                             .and("parentId").is(folderId));
-            Update unsetParent = new Update().unset("parentId");
-            mongoTemplate.updateMulti(orphanChildren, unsetParent, Folder.class);
+            mongoTemplate.updateMulti(orphanDirectChildren, new Update().unset("parentId"), Folder.class);
         }
 
         folderRepository.delete(folder);

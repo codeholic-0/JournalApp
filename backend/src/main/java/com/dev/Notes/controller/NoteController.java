@@ -69,10 +69,13 @@ public class NoteController {
         if (unfiled) {
             var res = noteService.getUnfiledNotes(username, workspaceId, pageable);
             return ResponseEntity.ok(res);
-        } else {
+        }
+        if (folderId != null) {
             var res = noteService.getNotesByUsername(username, workspaceId, folderId, pageable);
             return ResponseEntity.ok(res);
         }
+        var res = noteService.getNotesByUsername(username, workspaceId, pageable);
+        return ResponseEntity.ok(res);
     }
 
     @GetMapping("/unfiled/count")
