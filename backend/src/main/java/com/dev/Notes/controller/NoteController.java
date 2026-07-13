@@ -14,6 +14,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import com.dev.Notes.dto.request.NoteRequest;
+import com.dev.Notes.dto.request.SortOrderRequest;
 import com.dev.Notes.dto.response.NoteResponse;
 import com.dev.Notes.service.NoteService;
 
@@ -151,6 +152,15 @@ public class NoteController {
             @PathVariable String username,
             @PathVariable String noteId) {
         var res = noteService.togglePinned(username, noteId);
+        return ResponseEntity.ok(res);
+    }
+
+    @PatchMapping("/{noteId}/sort-order")
+    public ResponseEntity<NoteResponse> updateSortOrder(
+            @PathVariable String username,
+            @PathVariable String noteId,
+            @RequestBody SortOrderRequest req) {
+        var res = noteService.updateSortOrder(username, noteId, req);
         return ResponseEntity.ok(res);
     }
 }

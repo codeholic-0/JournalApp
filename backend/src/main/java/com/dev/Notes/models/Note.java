@@ -48,4 +48,5 @@ public class Note {
     private String categoryId;
     private List<String> tagIds;
     private List<String> collectionIds;
+    private String sortOrder;
 }

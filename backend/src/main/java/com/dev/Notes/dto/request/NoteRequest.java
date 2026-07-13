@@ -27,4 +27,5 @@ public class NoteRequest {
     private String folderId;
     private String icon;
     private String color;
+    private String sortOrder;
 }

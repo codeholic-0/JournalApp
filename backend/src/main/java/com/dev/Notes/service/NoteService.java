@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.dev.Notes.dto.request.NoteRequest;
+import com.dev.Notes.dto.request.SortOrderRequest;
 import com.dev.Notes.dto.response.NoteResponse;
 import com.dev.Notes.enumeration.NoteType;
 import com.dev.Notes.exceptions.NoteOwnershipMismatchException;
@@ -72,7 +73,21 @@ public class NoteService {
         res.setUpdatedAt(note.getUpdatedAt());
         res.setDeletedAt(note.getDeletedAt());
         res.setFolderId(note.getFolderId());
+        res.setSortOrder(note.getSortOrder());
         return res;
+    }
+
+    private Note validateOwnerShip(String username, String noteId) {
+        var note = noteRepository
+                .findById(noteId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Note not found with id: " + noteId));
+        if (note.getUsername().equals(username)) {
+            return note;
+        } else {
+            log.warn("Ownership mismatch! user: {} tried to access note: {}", username, note.getId());
+            throw new NoteOwnershipMismatchException(username);
+        }
     }
 
     @Transactional
@@ -109,22 +124,17 @@ public class NoteService {
         } catch (Exception e) {
             log.warn("Cache read error for key {}: {}", key, e.getMessage());
         }
-        var note = noteRepository
-                .findById(noteId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Note not found with id: " + noteId));
-        if (note.getUsername().equals(username)) {
-            NoteResponse response = toNoteResponse(note);
-            try {
-                redisTemplate.opsForValue().set(key, response, Duration.ofMinutes(5));
-            } catch (Exception e) {
-                log.warn("Cache write error for key {}: {}", key, e.getMessage());
-            }
-            return response;
-        } else {
-            log.warn("Ownership mismatch! user: {} tried to access note: {}", username, note.getTitle());
-            throw new NoteOwnershipMismatchException(username);
+
+        var note = validateOwnerShip(username, noteId);
+
+        NoteResponse response = toNoteResponse(note);
+        try {
+            redisTemplate.opsForValue().set(key, response, Duration.ofMinutes(5));
+        } catch (Exception e) {
+            log.warn("Cache write error for key {}: {}", key, e.getMessage());
         }
+        return response;
+
     }
 
     public Page<NoteResponse> getNotesByUsername(String username, String workspaceId, Pageable pageable) {
@@ -133,7 +143,8 @@ public class NoteService {
 
         if (workspaceId != null) {
             return noteRepository
-                    .findByUsernameAndWorkspaceIdAndDeletedAtIsNullOrderByCreatedAtDesc(username, workspaceId, pageable)
+                    .findByUsernameAndWorkspaceIdAndDeletedAtIsNullOrderBySortOrderAscCreatedAtDesc(username,
+                            workspaceId, pageable)
                     .map(this::toNoteResponse);
         }
 
@@ -149,7 +160,7 @@ public class NoteService {
 
         if (workspaceId != null) {
             return noteRepository
-                    .findByUsernameAndWorkspaceIdAndFolderIdAndDeletedAtIsNullOrderByCreatedAtDesc(username,
+                    .findByUsernameAndWorkspaceIdAndFolderIdAndDeletedAtIsNullOrderBySortOrderAscCreatedAtDesc(username,
                             workspaceId, folderId, pageable)
                     .map(this::toNoteResponse);
         }
@@ -164,29 +175,22 @@ public class NoteService {
             String username,
             String noteId,
             NoteRequest updates) {
-        var note = noteRepository
-                .findById(noteId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Note not found with id: " + noteId));
-        if (note.getUsername().equals(username)) {
-            if (updates.getTitle() != null)
-                note.setTitle(updates.getTitle());
-            if (updates.getContent() != null)
-                note.setContent(updates.getContent());
-            if (updates.getNoteType() != null)
-                note.setNoteType(updates.getNoteType());
-            if (updates.getFolderId() != null)
-                note.setFolderId(updates.getFolderId());
-            if (updates.getContentJson() != null)
-                note.setContentJson(updates.getContentJson());
-            noteRepository.save(note);
-            evictNoteCache(noteId);
-            log.info("Note: {} updated", note.getId());
-            return toNoteResponse(note);
-        } else {
-            log.warn("Ownership mismatch! user: {} tried to access note: {}", username, note.getId());
-            throw new NoteOwnershipMismatchException(username);
-        }
+        var note = validateOwnerShip(username, noteId);
+
+        if (updates.getTitle() != null)
+            note.setTitle(updates.getTitle());
+        if (updates.getContent() != null)
+            note.setContent(updates.getContent());
+        if (updates.getNoteType() != null)
+            note.setNoteType(updates.getNoteType());
+        if (updates.getFolderId() != null)
+            note.setFolderId(updates.getFolderId());
+        if (updates.getContentJson() != null)
+            note.setContentJson(updates.getContentJson());
+        noteRepository.save(note);
+        evictNoteCache(noteId);
+        log.info("Note: {} updated", note.getId());
+        return toNoteResponse(note);
     }
 
     @Transactional
@@ -195,22 +199,15 @@ public class NoteService {
                 .findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "User not found with username: " + username));
-        var note = noteRepository
-                .findById(noteId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Note not found with id: " + noteId));
-        if (note.getUsername().equals(username)) {
-            note.setDeletedAt(LocalDateTime.now());
-            noteRepository.save(note);
-            user.getNoteIds().remove(noteId);
-            userRepository.save(user);
-            evictNoteCache(noteId);
-            evictNotesCache(username);
-            log.info("note {} moved to trash for user: {}", note.getId(), username);
-        } else {
-            log.warn("Ownership mismatch! user: {} tried to access note: {}", username, note.getId());
-            throw new NoteOwnershipMismatchException(username);
-        }
+        var note = validateOwnerShip(username, noteId);
+        note.setDeletedAt(LocalDateTime.now());
+        noteRepository.save(note);
+        user.getNoteIds().remove(noteId);
+        userRepository.save(user);
+        evictNoteCache(noteId);
+        evictNotesCache(username);
+        log.info("note {} moved to trash for user: {}", note.getId(), username);
+
     }
 
     public Page<NoteResponse> getTrashedNotes(String username, Pageable pageable) {
@@ -230,23 +227,15 @@ public class NoteService {
                 .findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "User not found with username: " + username));
-        var note = noteRepository
-                .findById(noteId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Note not found with id: " + noteId));
-        if (note.getUsername().equals(username)) {
-            note.setDeletedAt(null);
-            noteRepository.save(note);
-            user.getNoteIds().add(noteId);
-            userRepository.save(user);
-            evictNoteCache(noteId);
-            evictNotesCache(username);
-            log.info("note {} restored for user: {}", note.getId(), username);
-            return toNoteResponse(note);
-        } else {
-            log.warn("Ownership mismatch! user: {} tried to access note: {}", username, note.getId());
-            throw new NoteOwnershipMismatchException(username);
-        }
+        var note = validateOwnerShip(username, noteId);
+        note.setDeletedAt(null);
+        noteRepository.save(note);
+        user.getNoteIds().add(noteId);
+        userRepository.save(user);
+        evictNoteCache(noteId);
+        evictNotesCache(username);
+        log.info("note {} restored for user: {}", note.getId(), username);
+        return toNoteResponse(note);
     }
 
     @Transactional
@@ -255,59 +244,46 @@ public class NoteService {
                 .findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "User not found with username: " + username));
-        var note = noteRepository
-                .findById(noteId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Note not found with id: " + noteId));
-        if (note.getUsername().equals(username)) {
-            noteRepository.delete(note);
-            user.getNoteIds().remove(noteId);
-            userRepository.save(user);
-            evictNoteCache(noteId);
-            evictNotesCache(username);
-            log.info("note {} permanently deleted for user: {}", note.getId(), username);
-        } else {
-            log.warn("Ownership mismatch! user: {} tried to access note: {}", username, note.getId());
-            throw new NoteOwnershipMismatchException(username);
-        }
+        var note = validateOwnerShip(username, noteId);
+        noteRepository.delete(note);
+        user.getNoteIds().remove(noteId);
+        userRepository.save(user);
+        evictNoteCache(noteId);
+        evictNotesCache(username);
+        log.info("note {} permanently deleted for user: {}", note.getId(), username);
     }
 
     public NoteResponse toggleFavorite(String username, String noteId) {
-        var note = noteRepository
-                .findById(noteId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Note not found with id: " + noteId));
-        if (note.getUsername().equals(username)) {
-            note.setFavorite(!note.isFavorite());
-            noteRepository.save(note);
-            evictNoteCache(noteId);
-            evictNotesCache(username);
-            log.info("note {} {} favourite for user: {}", note.getId(), note.isFavorite() ? "marked" : "unmarked",
-                    username);
-            return toNoteResponse(note);
-        } else {
-            log.warn("Ownership mismatch! user: {} tried to access note: {}", username, note.getId());
-            throw new NoteOwnershipMismatchException(username);
-        }
+        var note = validateOwnerShip(username, noteId);
+        note.setFavorite(!note.isFavorite());
+        noteRepository.save(note);
+        evictNoteCache(noteId);
+        evictNotesCache(username);
+        log.info("note {} {} favourite for user: {}", note.getId(), note.isFavorite() ? "marked" : "unmarked",
+                username);
+        return toNoteResponse(note);
     }
 
     public NoteResponse togglePinned(String username, String noteId) {
-        var note = noteRepository
-                .findById(noteId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Note not found with id: " + noteId));
-        if (note.getUsername().equals(username)) {
-            note.setPinned(!note.isPinned());
-            noteRepository.save(note);
-            evictNoteCache(noteId);
-            evictNotesCache(username);
-            log.info("note {} {}  for user: {}", note.getId(), note.isPinned() ? "pinned" : "unpinned",
-                    username);
-            return toNoteResponse(note);
-        } else {
-            log.warn("Ownership mismatch! user: {} tried to access note: {}", username, note.getId());
-            throw new NoteOwnershipMismatchException(username);
-        }
+        var note = validateOwnerShip(username, noteId);
+        note.setPinned(!note.isPinned());
+        noteRepository.save(note);
+        evictNoteCache(noteId);
+        evictNotesCache(username);
+        log.info("note {} {}  for user: {}", note.getId(), note.isPinned() ? "pinned" : "unpinned",
+                username);
+        return toNoteResponse(note);
+    }
+
+    @Transactional
+    public NoteResponse updateSortOrder(String username, String noteId, SortOrderRequest req) {
+        var note = validateOwnerShip(username, noteId);
+        note.setSortOrder(req.getSortOrder());
+        noteRepository.save(note);
+        evictNoteCache(noteId);
+        evictNotesCache(username);
+        log.info("Sort order updated for note: {}", noteId);
+        return toNoteResponse(note);
     }
 
     private void evictNoteCache(String noteId) {
