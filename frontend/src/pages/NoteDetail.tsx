@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { get } from "idb-keyval";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import {
     ArrowLeft,
@@ -25,6 +26,7 @@ import {
 import { Skeleton, SkeletonText } from "../components/Skeleton";
 import ConfirmDialog from "../components/ConfirmDialog";
 import NoteTypeBadge from "../components/NoteTypeBadge";
+import type { NoteDraft } from "../types/note";
 
 export default function NoteDetail() {
     const { id } = useParams();
@@ -39,6 +41,23 @@ export default function NoteDetail() {
         id: string;
         title: string;
     } | null>(null);
+    const [localContent, setLocalContent] = useState<string | null>(null);
+    const [localSavedAt, setLocalSavedAt] = useState<number>(0);
+
+    useEffect(() => {
+        if (!id) return;
+        (async () => {
+            try {
+                const working = await get<NoteDraft>("note-working:" + id);
+                if (working) {
+                    setLocalContent(working.content);
+                    setLocalSavedAt(working.savedAt);
+                }
+            } catch {
+                /* ignore */
+            }
+        })();
+    }, [id]);
 
     const handleDelete = async () => {
         if (!deleteTarget) return;
@@ -65,6 +84,12 @@ export default function NoteDetail() {
         );
     }
 
+    const hasUnsavedEdits = !!(
+        localContent &&
+        note &&
+        localSavedAt > new Date(note.updatedAt).getTime()
+    );
+
     if (isError || !note) {
         return <p className="text-red-400">Note not found.</p>;
     }
@@ -85,6 +110,11 @@ export default function NoteDetail() {
                     <h1 className="text-2xl font-bold text-on-surface wrap-break-word">
                         {note.title}
                     </h1>
+                    {hasUnsavedEdits && (
+                        <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-xs font-medium">
+                            Unsaved edits
+                        </span>
+                    )}
                     <NoteTypeBadge type={note.noteType} />
                     <div className="flex items-center gap-2 sm:hidden">
                         <button
@@ -206,9 +236,37 @@ export default function NoteDetail() {
 
             <div
                 className="border-t border-outline pt-6"
-                style={note.color ? { borderTop: `4px solid ${note.color}` } : undefined}
+                style={
+                    note.color
+                        ? { borderTop: `4px solid ${note.color}` }
+                        : undefined
+                }
             >
-                {note.content ? (
+                {hasUnsavedEdits ? (
+                    <div className="prose prose-sm max-w-none">
+                        <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            rehypePlugins={[
+                                rehypeSanitize,
+                                [
+                                    rehypeHighlight,
+                                    { detect: true, ignoreMissing: true },
+                                ],
+                            ]}
+                            components={{
+                                a: (props) => (
+                                    <a
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        {...props}
+                                    />
+                                ),
+                            }}
+                        >
+                            {localContent}
+                        </ReactMarkdown>
+                    </div>
+                ) : note.content ? (
                     <div className="prose prose-sm max-w-none">
                         <ReactMarkdown
                             remarkPlugins={[remarkGfm]}

@@ -12,7 +12,14 @@ export const useNotes = (
     useQuery({
         queryKey: ["notes", username, page, workspaceId, folderId, unfiled],
         queryFn: () =>
-            notesApi.getNotes(username, page, 10, workspaceId, folderId, unfiled),
+            notesApi.getNotes(
+                username,
+                page,
+                10,
+                workspaceId,
+                folderId,
+                unfiled,
+            ),
         enabled: !!username,
         placeholderData: (previousData) => previousData,
     });
@@ -24,13 +31,17 @@ export const useUnfiledCount = (username: string, workspaceId?: string) =>
         enabled: !!username,
     });
 
-export const useNote = (username: string, id: string) =>
+export const useNote = (
+    username: string,
+    id: string,
+    queryOptions?: { staleTime?: number },
+) =>
     useQuery({
         queryKey: ["note", username, id],
         queryFn: () => notesApi.getNote(username, id),
         enabled: !!username && !!id,
         refetchOnMount: true,
-        staleTime: 0,
+        staleTime: queryOptions?.staleTime ?? 0,
     });
 
 export const useCreateNote = () => {

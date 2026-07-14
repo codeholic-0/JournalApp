@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,8 +12,10 @@ import {
     Plus,
     List,
 } from "lucide-react";
-import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import { get, set, del } from "idb-keyval";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { useAuth } from "../hooks/useAuth";
 import { useNote, useCreateNote, useUpdateNote } from "../hooks/useNotes";
 import { useMdEditor } from "../hooks/useMdEditor";
@@ -35,9 +37,13 @@ export default function NoteEditor() {
     const { user } = useAuth();
     const navigate = useNavigate();
     const username = user?.username ?? "";
-    const draftKey = `note-draft:${id || "new"}`;
+    const DRAFT_KEY = isEdit ? `note-working:${id}` : "note-draft:__new__";
 
-    const { data: existing } = useNote(username, id ?? "");
+    const { data: existing } = useNote(
+        username,
+        id ?? "",
+        isEdit ? { staleTime: Infinity } : undefined,
+    );
     const createNote = useCreateNote();
     const updateNote = useUpdateNote();
 
@@ -56,7 +62,9 @@ export default function NoteEditor() {
     const lastSavedRef = useRef("");
     const [wrapped, setWrapped] = useState(true);
     const [showOutline, setShowOutline] = useState(false);
-
+    const [showPreview, setShowPreview] = useState(false);
+    const [hasUnsaved, setHasUnsaved] = useState(false);
+    const serverContentRef = useRef("");
     const getDebouncedSaveRef = useRef<() => void>(() => {});
 
     const {
@@ -80,11 +88,11 @@ export default function NoteEditor() {
         const content = getValue();
         const title = getValues("title");
         if (content === lastSavedRef.current) return;
-
         const draft: NoteDraft = { title, content, savedAt: Date.now() };
-        localStorage.setItem(draftKey, JSON.stringify(draft));
+        set(DRAFT_KEY, draft).catch(() => {});
         lastSavedRef.current = content;
         setAutoSaveStatus("saved");
+        setHasUnsaved(isEdit && content !== serverContentRef.current);
         setTimeout(() => setAutoSaveStatus("idle"), 3000);
     }, 1500);
 
@@ -95,31 +103,75 @@ export default function NoteEditor() {
     // Restore draft on mount (create mode only — edit mode always loads from server)
     useEffect(() => {
         if (isEdit) return;
-        const raw = localStorage.getItem(draftKey);
-        if (!raw) return;
-        try {
-            const draft: NoteDraft = JSON.parse(raw);
-            reset({ title: draft.title });
-            setValue(draft.content);
-        } catch {
-            /* ignore */
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        (async () => {
+            try {
+                const draft = await get<NoteDraft>("note-draft:__new__");
+                if (draft) {
+                    reset({ title: draft.title });
+                    setValue(draft.content);
+                }
+            } catch {
+                /* ignore corrupted data */
+            }
+        })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Sync when editor is ready and existing note loads (edit mode)
     useEffect(() => {
-        if (isEdit && existing?.content && ready) {
-            lastSavedRef.current = existing.content;
-            setValue(existing.content);
-            reset({ title: existing.title, noteType: existing.noteType });
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [existing, ready]);
+        if (!isEdit || !existing || !ready) return;
+        (async () => {
+            const key = "note-working:" + id;
+            try {
+                const working = await get<NoteDraft>(key);
+                const serverTime = new Date(existing.updatedAt).getTime();
+                if (working && working.savedAt > serverTime) {
+                    // Fresh working copy — load from it
+                    reset({ title: working.title });
+                    setValue(working.content);
+                    serverContentRef.current = existing.content;
+                } else {
+                    // Stale or absent — write fresh server data as working copy
+                    if (working) {
+                        await del(key);
+                    }
+                    await set(key, {
+                        title: existing.title,
+                        content: existing.content,
+                        savedAt: Date.now(),
+                    });
+                    setValue(existing.content);
+                    reset({
+                        title: existing.title,
+                        noteType: existing.noteType,
+                    });
+                    serverContentRef.current = existing.content;
+                }
+                lastSavedRef.current = existing.content;
+            } catch {
+                // Fallback to server
+                setValue(existing.content);
+                reset({ title: existing.title, noteType: existing.noteType });
+                serverContentRef.current = existing.content;
+            }
+        })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [existing, ready, id, isEdit]);
+
+    useEffect(() => {
+        const handler = (e: BeforeUnloadEvent) => {
+            if (dirtyRef.current) {
+                e.preventDefault();
+                e.returnValue = "";
+            }
+        };
+        window.addEventListener("beforeunload", handler);
+        return () => window.removeEventListener("beforeunload", handler);
+    }, []);
 
     const currentWorkspaceId = useVaultStore((s) => s.currentWorkspaceId);
     const currentFolderId = useVaultStore((s) => s.currentFolderId);
-    const onSubmit = async (data: NoteForm) => {
+    const onSubmit = useCallback(async (data: NoteForm) => {
         try {
             const payload = {
                 title: data.title,
@@ -135,19 +187,31 @@ export default function NoteEditor() {
                 await createNote.mutateAsync({ username, data: payload });
                 toast.success("Note created");
             }
-            localStorage.removeItem(draftKey);
+            if (isEdit) {
+                await del("note-working:" + id);
+            } else {
+                await del("note-draft:__new__");
+            }
             navigate("/");
         } catch {
             toast.error("Failed to save note");
         }
-    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isEdit, id, username, currentWorkspaceId, currentFolderId]);
 
     return (
         <div className="max-w-5xl mx-auto space-y-6 animate-fadeIn">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <button
-                        onClick={() => navigate(-1)}
+                        onClick={async () => {
+                            try {
+                                await del(DRAFT_KEY);
+                            } catch {
+                                /* ok */
+                            }
+                            navigate(-1);
+                        }}
                         className="p-1.5 rounded-lg text-on-surface-muted hover:bg-hover hover:text-on-surface transition-colors"
                     >
                         <ArrowLeft size={20} />
@@ -156,15 +220,14 @@ export default function NoteEditor() {
                         {isEdit ? "Edit Note" : "New Note"}
                     </h1>
                 </div>
-                {isEdit && (
-                    <Link
-                        to={`/notes/${id}`}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-outline text-sm text-on-surface-muted hover:text-on-surface hover:bg-hover transition-colors"
-                    >
-                        <Eye size={16} />
-                        View
-                    </Link>
-                )}
+                <button
+                    type="button"
+                    onClick={() => setShowPreview(!showPreview)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-outline text-sm text-on-surface-muted hover:text-on-surface hover:bg-hover transition-colors"
+                >
+                    <Eye size={16} />
+                    {showPreview ? "Edit" : "Preview"}
+                </button>
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -204,8 +267,17 @@ export default function NoteEditor() {
 
                 <div className="relative">
                     <div
+                        className="min-h-100 border border-outline rounded-lg p-3 prose prose-sm max-w-none overflow-auto"
+                        style={{ display: showPreview ? "block" : "none" }}
+                    >
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {getValue()}
+                        </ReactMarkdown>
+                    </div>
+                    <div
                         ref={editorRef}
                         className="min-h-100 border border-outline rounded-lg p-3 focus-within:ring-1 focus-within:ring-primary"
+                        style={{ display: showPreview ? "none" : "block" }}
                     />
                     {showOutline && headings.length > 0 && (
                         <EditorOutline
@@ -214,6 +286,18 @@ export default function NoteEditor() {
                             onHeadingClick={scrollTo}
                             onClose={() => setShowOutline(false)}
                         />
+                    )}
+                </div>
+                <div className="flex items-center gap-2">
+                    {!isEdit && (
+                        <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-xs font-medium">
+                            Draft
+                        </span>
+                    )}
+                    {isEdit && hasUnsaved && (
+                        <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-xs font-medium">
+                            Unsaved
+                        </span>
                     )}
                 </div>
 
@@ -282,7 +366,14 @@ export default function NoteEditor() {
                         </button>
                         <button
                             type="button"
-                            onClick={() => navigate(-1)}
+                            onClick={async () => {
+                                try {
+                                    await del(DRAFT_KEY);
+                                } catch {
+                                    /* ok */
+                                }
+                                navigate(-1);
+                            }}
                             className="px-5 py-2 rounded-lg border border-outline text-sm text-on-surface-muted hover:bg-hover transition-colors"
                         >
                             Cancel
