@@ -11,6 +11,7 @@ export const useWorkspaces = (
     useQuery({
         queryKey: ["workspaces", sort],
         queryFn: () => workspacesApi.getWorkspaces(sort),
+        select: (data) => data.filter((w) => !w.name.startsWith("__internal_")),
     });
 
 export const useWorkspace = (id: string) =>
