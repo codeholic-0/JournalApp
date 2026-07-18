@@ -18,6 +18,8 @@ interface VaultState {
     sectionCollapse: Record<string, boolean>;
     dashboardView: "grid" | "list";
     showUnfiled: boolean;
+    editorMode: "edit" | "read";
+    focusMode: boolean;
 
     setCurrentFolderId: (id: string | null) => void;
     setCurrentWorkspaceId: (id: string | null) => void;
@@ -34,6 +36,8 @@ interface VaultState {
     toggleSection: (section: string) => void;
     setDashboardView: (view: "grid" | "list") => void;
     setShowUnfiled: (show: boolean) => void;
+    setEditorMode: (mode: "edit" | "read") => void;
+    setFocusMode: (mode: boolean) => void;
 }
 
 function getInitialSidebarWidth(): number {
@@ -64,6 +68,8 @@ export const useVaultStore = create<VaultState>()(
             sectionCollapse: {},
             dashboardView: "grid",
             showUnfiled: false,
+            editorMode: "edit",
+            focusMode: false,
 
             setCurrentWorkspaceId: (id) => set({ currentWorkspaceId: id }),
             setCurrentFolderId: (id) => set({ currentFolderId: id }),
@@ -106,6 +112,8 @@ export const useVaultStore = create<VaultState>()(
                     showUnfiled: show,
                     currentFolderId: show ? null : state.currentFolderId,
                 })),
+            setEditorMode: (mode) => set({ editorMode: mode }),
+            setFocusMode: (mode) => set({ focusMode: mode }),
         }),
         {
             name: "vault-storage",
@@ -117,6 +125,8 @@ export const useVaultStore = create<VaultState>()(
                 sidebarWidth: state.sidebarWidth,
                 sectionCollapse: state.sectionCollapse,
                 dashboardView: state.dashboardView,
+                editorMode: state.editorMode,
+                focusMode: state.focusMode,
             }),
             merge: (persisted, current) => {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any

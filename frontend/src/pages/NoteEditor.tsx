@@ -7,7 +7,8 @@ import {
     ArrowLeft,
     FileText,
     Loader2,
-    Eye,
+    Maximize2,
+    Minimize2,
     WrapText,
     Plus,
     List,
@@ -62,7 +63,10 @@ export default function NoteEditor() {
     const lastSavedRef = useRef("");
     const [wrapped, setWrapped] = useState(true);
     const [showOutline, setShowOutline] = useState(false);
-    const [showPreview, setShowPreview] = useState(false);
+    const editorMode = useVaultStore((s) => s.editorMode);
+    const focusMode = useVaultStore((s) => s.focusMode);
+    const setEditorMode = useVaultStore((s) => s.setEditorMode);
+    const setFocusMode = useVaultStore((s) => s.setFocusMode);
     const [hasUnsaved, setHasUnsaved] = useState(false);
     const serverContentRef = useRef("");
     const getDebouncedSaveRef = useRef<() => void>(() => {});
@@ -114,7 +118,7 @@ export default function NoteEditor() {
                 /* ignore corrupted data */
             }
         })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Sync when editor is ready and existing note loads (edit mode)
@@ -155,7 +159,7 @@ export default function NoteEditor() {
                 serverContentRef.current = existing.content;
             }
         })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [existing, ready, id, isEdit]);
 
     useEffect(() => {
@@ -171,45 +175,51 @@ export default function NoteEditor() {
 
     const currentWorkspaceId = useVaultStore((s) => s.currentWorkspaceId);
     const currentFolderId = useVaultStore((s) => s.currentFolderId);
-    const onSubmit = useCallback(async (data: NoteForm) => {
-        try {
-            const payload = {
-                title: data.title,
-                content: getValue(),
-                noteType: (data.noteType as NoteType) || "BASIC",
-                workspaceId: currentWorkspaceId ?? undefined,
-                folderId: currentFolderId ?? undefined,
-            };
-            if (isEdit && id) {
-                await updateNote.mutateAsync({ username, id, data: payload });
-                toast.success("Note updated");
-            } else {
-                await createNote.mutateAsync({ username, data: payload });
-                toast.success("Note created");
+    const onSubmit = useCallback(
+        async (data: NoteForm) => {
+            try {
+                const payload = {
+                    title: data.title,
+                    content: getValue(),
+                    noteType: (data.noteType as NoteType) || "BASIC",
+                    workspaceId: currentWorkspaceId ?? undefined,
+                    folderId: currentFolderId ?? undefined,
+                };
+                if (isEdit && id) {
+                    await updateNote.mutateAsync({
+                        username,
+                        id,
+                        data: payload,
+                    });
+                    toast.success("Note updated");
+                } else {
+                    await createNote.mutateAsync({ username, data: payload });
+                    toast.success("Note created");
+                }
+                if (isEdit) {
+                    await del("note-working:" + id);
+                } else {
+                    await del("note-draft:__new__");
+                }
+                navigate("/");
+            } catch {
+                toast.error("Failed to save note");
             }
-            if (isEdit) {
-                await del("note-working:" + id);
-            } else {
-                await del("note-draft:__new__");
-            }
-            navigate("/");
-        } catch {
-            toast.error("Failed to save note");
-        }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isEdit, id, username, currentWorkspaceId, currentFolderId]);
+        },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [isEdit, id, username, currentWorkspaceId, currentFolderId],
+    );
 
     return (
-        <div className="max-w-5xl mx-auto space-y-6 animate-fadeIn">
-            <div className="flex items-center justify-between">
+        <div
+            className={`max-w-5xl mx-auto space-y-6 animate-fadeIn ${focusMode ? "max-w-full mx-0" : ""}`}
+        >
+            <div className={`flex items-center justify-between ${focusMode ? "hidden" : ""}`}>
                 <div className="flex items-center gap-3">
                     <button
+                        type="button"
                         onClick={async () => {
-                            try {
-                                await del(DRAFT_KEY);
-                            } catch {
-                                /* ok */
-                            }
+                            try { await del(DRAFT_KEY); } catch { /* ok */ }
                             navigate(-1);
                         }}
                         className="p-1.5 rounded-lg text-on-surface-muted hover:bg-hover hover:text-on-surface transition-colors"
@@ -220,18 +230,21 @@ export default function NoteEditor() {
                         {isEdit ? "Edit Note" : "New Note"}
                     </h1>
                 </div>
-                <button
-                    type="button"
-                    onClick={() => setShowPreview(!showPreview)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-outline text-sm text-on-surface-muted hover:text-on-surface hover:bg-hover transition-colors"
-                >
-                    <Eye size={16} />
-                    {showPreview ? "Edit" : "Preview"}
-                </button>
             </div>
 
+            {focusMode && (
+                <button
+                    type="button"
+                    onClick={() => setFocusMode(false)}
+                    className="fixed top-4 right-4 z-50 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-alt border border-outline text-sm text-on-surface-muted hover:text-on-surface hover:bg-hover transition-colors shadow-lg"
+                    title="Exit focus mode"
+                >
+                    <Minimize2 size={16} />
+                    <span className="hidden sm:inline">Exit focus</span>
+                </button>
+            )}
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                <div className="flex items-center gap-3">
+                <div className={`flex items-center gap-3 ${focusMode ? "hidden" : ""}`}>
                     <FileText size={20} className="text-primary shrink-0" />
                     <input
                         {...register("title")}
@@ -245,10 +258,8 @@ export default function NoteEditor() {
                     </p>
                 )}
 
-                <div className="flex items-center gap-2">
-                    <label className="text-xs text-on-surface-muted">
-                        Type
-                    </label>
+                <div className={`flex items-center gap-2 ${focusMode ? "hidden" : ""}`}>
+                    <label className="text-xs text-on-surface-muted">Type</label>
                     <select
                         {...register("noteType")}
                         defaultValue="BASIC"
@@ -263,21 +274,44 @@ export default function NoteEditor() {
                         <option value="PROJECT">Project</option>
                         <option value="WHITEBOARD">Whiteboard</option>
                     </select>
+                    <div className="flex-1" />
+                    <button
+                        type="button"
+                        onClick={() => setEditorMode(editorMode === "read" ? "edit" : "read")}
+                        className={`flex items-center gap-1 px-2 py-1 rounded text-xs border border-outline transition-colors ${
+                            editorMode === "read"
+                                ? "bg-primary/10 text-primary border-primary/30"
+                                : "text-on-surface-muted hover:text-on-surface hover:bg-hover"
+                        }`}
+                    >
+                        <FileText size={14} />
+                        {editorMode === "read" ? "Edit" : "Read"}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setFocusMode(!focusMode)}
+                        className={`flex items-center gap-1 px-2 py-1 rounded text-xs border border-outline transition-colors ${
+                            focusMode
+                                ? "bg-primary/10 text-primary border-primary/30"
+                                : "text-on-surface-muted hover:text-on-surface hover:bg-hover"
+                        }`}
+                        title="Focus mode"
+                    >
+                        {focusMode ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+                    </button>
                 </div>
 
                 <div className="relative">
-                    <div
-                        className="min-h-100 border border-outline rounded-lg p-3 prose prose-sm max-w-none overflow-auto"
-                        style={{ display: showPreview ? "block" : "none" }}
-                    >
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                            {getValue()}
-                        </ReactMarkdown>
+                    <div className={editorMode === "read" ? "" : "hidden"}>
+                        <div className="min-h-100 prose prose-sm max-w-none p-3">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                {getValue()}
+                            </ReactMarkdown>
+                        </div>
                     </div>
                     <div
                         ref={editorRef}
-                        className="min-h-100 border border-outline rounded-lg p-3 focus-within:ring-1 focus-within:ring-primary"
-                        style={{ display: showPreview ? "none" : "block" }}
+                        className={`${focusMode ? "min-h-[calc(100vh-2rem)]" : "min-h-100"} border border-outline rounded-lg p-3 focus-within:ring-1 focus-within:ring-primary ${editorMode === "edit" ? "" : "hidden"}`}
                     />
                     {showOutline && headings.length > 0 && (
                         <EditorOutline
@@ -288,7 +322,7 @@ export default function NoteEditor() {
                         />
                     )}
                 </div>
-                <div className="flex items-center gap-2">
+                <div className={`flex items-center gap-2 ${focusMode ? "hidden" : ""}`}>
                     {!isEdit && (
                         <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-xs font-medium">
                             Draft
@@ -301,7 +335,9 @@ export default function NoteEditor() {
                     )}
                 </div>
 
-                <div className="flex items-center justify-between border border-outline rounded-lg px-3 py-1.5 text-xs text-on-surface-muted">
+                <div
+                    className={`flex items-center justify-between border border-outline rounded-lg px-3 py-1.5 text-xs text-on-surface-muted ${focusMode ? "hidden" : ""}`}
+                >
                     <button
                         type="button"
                         onClick={() => {
@@ -348,7 +384,9 @@ export default function NoteEditor() {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3 pt-2">
+                <div
+                    className={`flex items-center gap-3 pt-2 ${focusMode ? "hidden" : ""}`}
+                >
                     <div className="flex gap-3">
                         <button
                             type="submit"
@@ -356,7 +394,10 @@ export default function NoteEditor() {
                             className="flex items-center gap-2 px-5 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-hover disabled:opacity-50 transition-colors active:scale-[0.98]"
                         >
                             {isSubmitting && (
-                                <Loader2 size={14} className="animate-spin" />
+                                <Loader2
+                                    size={14}
+                                    className="animate-spin"
+                                />
                             )}
                             {isSubmitting
                                 ? "Saving..."
@@ -387,7 +428,8 @@ export default function NoteEditor() {
                                 }`}
                             >
                                 {autoSaveStatus === "saved" && "Saved ✓"}
-                                {autoSaveStatus === "failed" && "Save failed"}
+                                {autoSaveStatus === "failed" &&
+                                    "Save failed"}
                             </span>
                         )}
                     </div>

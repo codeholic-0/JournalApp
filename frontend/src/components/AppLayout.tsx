@@ -81,6 +81,7 @@ export default function AppLayout() {
     const sidebarWidth = useVaultStore((s) => s.sidebarWidth);
     const setSidebarWidth = useVaultStore((s) => s.setSidebarWidth);
     const collapsed = sidebarWidth <= 80;
+    const focusMode = useVaultStore((s) => s.focusMode);
     const dragRef = useRef<HTMLDivElement>(null);
 
     const toggleCollapsed = useCallback(() => {
@@ -221,7 +222,7 @@ export default function AppLayout() {
                 <aside
                     className={`fixed inset-y-0 left-0 z-40 flex flex-col border-r border-outline bg-surface-alt overflow-y-auto transition-[width] duration-300 max-lg:max-w-[85vw] ${
                         collapsed ? "overflow-hidden" : ""
-                    } ${isDragging ? "transition-none" : ""}`}
+                    } ${isDragging ? "transition-none" : ""} ${focusMode ? "hidden" : ""}`}
                     style={{ width: collapsed ? 64 : sidebarWidth }}
                 >
                     {sidebarInner}
@@ -269,7 +270,7 @@ export default function AppLayout() {
 
             {/* Main */}
             <main
-                className="transition-all duration-300 p-6 pt-16 lg:pt-6 animate-fadeIn"
+                className={`transition-all duration-300 p-6 pt-16 lg:pt-6 animate-fadeIn ${focusMode ? "ml-0! pt-0!" : ""}`}
                 style={
                     {
                         "--sidebar-offset": collapsed
