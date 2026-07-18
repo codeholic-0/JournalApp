@@ -17,6 +17,8 @@ import FolderTree from "./FolderTree";
 import { useAuth } from "../hooks/useAuth";
 import { useVaultStore } from "../store/vaultStore";
 import Breadcrumbs from "./Breadcrumbs";
+import ShortcutOverlay from "./ShortcutOverlay";
+import { useShortcuts } from "../hooks/useShortcuts";
 
 const navItems = [
     { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
@@ -51,6 +53,7 @@ function SectionDivider({
         <div>
             <button
                 onClick={() => toggle(section)}
+                aria-expanded={!isCollapsed}
                 className="flex items-center gap-2 w-full px-3 py-1.5 text-xs font-semibold text-on-surface-muted hover:text-on-surface transition-colors"
             >
                 <ChevronDown
@@ -66,7 +69,9 @@ function SectionDivider({
                     isCollapsed ? "grid-rows-[0fr]" : "grid-rows-[1fr]"
                 }`}
             >
-                <div className={isCollapsed ? "overflow-hidden" : ""}>{children}</div>
+                <div className={isCollapsed ? "overflow-hidden" : ""}>
+                    {children}
+                </div>
             </div>
         </div>
     );
@@ -82,6 +87,7 @@ export default function AppLayout() {
     const setSidebarWidth = useVaultStore((s) => s.setSidebarWidth);
     const collapsed = sidebarWidth <= 80;
     const focusMode = useVaultStore((s) => s.focusMode);
+    const { showShortcuts, setShowShortcuts } = useShortcuts();
     const dragRef = useRef<HTMLDivElement>(null);
 
     const toggleCollapsed = useCallback(() => {
@@ -188,7 +194,7 @@ export default function AppLayout() {
             </nav>
 
             {/* Account link */}
-            <div className="border-t border-outline p-2">
+            <div className="border-t border-outline p-2 space-y-1">
                 <NavLink
                     to={accountItem.to}
                     end={accountItem.end}
@@ -198,12 +204,25 @@ export default function AppLayout() {
                     <UserCircle size={18} />
                     {!collapsed && <span>{user?.username ?? "Account"}</span>}
                 </NavLink>
+                <button
+                    onClick={() => setShowShortcuts(true)}
+                    className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm text-on-surface-muted hover:bg-hover hover:text-on-surface transition-colors"
+                    title="Keyboard shortcuts"
+                >
+                    <span className="w-5 h-5 flex items-center justify-center text-xs font-bold border border-outline rounded">
+                        ?
+                    </span>
+                    {!collapsed && <span>Keyboard shortcuts</span>}
+                </button>
             </div>
         </>
     );
 
     return (
         <div className="min-h-screen bg-surface">
+            <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[60] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-surface-raised focus:text-on-surface focus:border focus:border-outline focus:shadow-lg">
+                Skip to content
+            </a>
             {/* Mobile hamburger */}
             <button
                 className={`lg:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-surface-alt border border-outline text-on-surface shadow-sm transition-opacity duration-200 ${
@@ -229,6 +248,7 @@ export default function AppLayout() {
                     {!collapsed && (
                         <div
                             ref={dragRef}
+                            aria-label="Resize sidebar"
                             className="absolute right-0 inset-y-0 w-1.5 cursor-col-resize z-10 hover:bg-primary/30 active:bg-primary/50 transition-colors"
                         />
                     )}
@@ -270,6 +290,7 @@ export default function AppLayout() {
 
             {/* Main */}
             <main
+                id="main-content"
                 className={`transition-all duration-300 p-6 pt-16 lg:pt-6 animate-fadeIn ${focusMode ? "ml-0! pt-0!" : ""}`}
                 style={
                     {
@@ -279,9 +300,13 @@ export default function AppLayout() {
                     } as React.CSSProperties
                 }
             >
-                <Breadcrumbs/>
+                <Breadcrumbs />
                 <Outlet />
             </main>
+            <ShortcutOverlay
+                open={showShortcuts}
+                onClose={() => setShowShortcuts(false)}
+            />
         </div>
     );
 }

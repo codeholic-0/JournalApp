@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
@@ -18,6 +18,18 @@ const NoteEditor = lazy(() => import("./pages/NoteEditor"));
 const NoteDetail = lazy(() => import("./pages/NoteDetail"));
 
 const queryClient = new QueryClient();
+
+function ThemedToaster() {
+    const [theme, setTheme] = useState<"dark" | "light">("dark");
+    useEffect(() => {
+        const obs = new MutationObserver(() =>
+            setTheme(document.documentElement.classList.contains("dark") ? "dark" : "light"),
+        );
+        obs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+        return () => obs.disconnect();
+    }, []);
+    return <Toaster theme={theme} position="bottom-right" richColors closeButton />;
+}
 
 export default function App() {
     return (
@@ -59,12 +71,7 @@ export default function App() {
                         </Suspense>
                     </BrowserRouter>
                 </AuthProvider>
-                <Toaster
-                    theme="dark"
-                    position="bottom-right"
-                    richColors
-                    closeButton
-                />
+                <ThemedToaster />
             </QueryClientProvider>
         </ErrorBoundary>
     );

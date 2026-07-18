@@ -16,6 +16,7 @@ export function useMdEditor(opts?: MountMDOpts) {
     const [ready, setReady] = useState(false);
     const [stats, setStats] = useState({ words: 0, chars: 0 });
     const [headings, setHeadings] = useState<Heading[]>([]);
+    const openSearch = useCallback(() => apiRef.current?.openSearch(), []);
     useLayoutEffect(() => {
         optsRef.current = opts;
     });
@@ -65,5 +66,5 @@ export function useMdEditor(opts?: MountMDOpts) {
         apiRef.current?.scrollTo(pos);
     }, []);
 
-    return { editorRef, getValue, setValue, ready, setWrap, stats, triggerCompletion, headings, scrollTo };
+    return { editorRef, getValue, setValue, ready, setWrap, stats, triggerCompletion, headings, scrollTo, openSearch };
 }

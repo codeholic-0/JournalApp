@@ -9,6 +9,7 @@ import {
     rectangularSelection,
 } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
+import { search, searchKeymap, openSearchPanel } from "@codemirror/search";
 import {
     foldGutter,
     indentOnInput,
@@ -60,6 +61,7 @@ export interface EditorAPI {
     setWrap: (enabled: boolean) => void;
     triggerCompletion: () => void;
     destroy: () => void;
+    openSearch: () => void;
     scrollTo: (pos: number) => void;
 }
 
@@ -95,6 +97,7 @@ export function mountMD(
             headingStateField,
             indentOnInput(),
             history(),
+            search({top: true}),
             highlightCompartment.of(syntaxHighlighting(mdHighlightStyle)),
             markdown({ base: markdownLanguage, codeLanguages: languages }),
             keymap.of([
@@ -102,6 +105,7 @@ export function mountMD(
                 ...defaultKeymap,
                 ...historyKeymap,
                 ...foldKeymap,
+                ...searchKeymap,
             ]),
             updateListener,
             EditorView.theme({
@@ -162,6 +166,68 @@ export function mountMD(
                 ".cm-tooltip": {
                     zIndex: "1000",
                 },
+                ".cm-panel.cm-search": {
+                    backgroundColor: "var(--bg-elevated)",
+                    borderBottom: "1px solid var(--border)",
+                    borderRadius: "0 0 8px 8px",
+                    padding: "8px 12px",
+                    fontFamily: "inherit",
+                    color: "var(--fg)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    flexWrap: "wrap" as const,
+                    "& input, & .cm-textfield": {
+                        backgroundColor: "var(--bg)",
+                        border: "1px solid var(--border)",
+                        borderRadius: "6px",
+                        padding: "6px 10px",
+                        color: "var(--fg)",
+                        fontFamily: "inherit",
+                        fontSize: "13px",
+                        outline: "none",
+                        "&:focus": {
+                            borderColor: "var(--accent)",
+                        },
+                    },
+                    "& button, & .cm-button": {
+                        background: "var(--bg-subtle)",
+                        backgroundImage: "none",
+                        border: "1px solid var(--border)",
+                        borderRadius: "6px",
+                        color: "var(--fg)",
+                        cursor: "pointer",
+                        fontSize: "12px",
+                        padding: "4px 10px",
+                        fontFamily: "inherit",
+                        "&:hover": {
+                            background: "var(--bg-hover)",
+                            backgroundImage: "none",
+                        },
+                    },
+                    "& label": {
+                        color: "var(--fg-muted)",
+                        fontSize: "12px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "4px",
+                        borderRadius: "6px",
+                    },
+                    "& input[type=checkbox]": {
+                        accentColor: "var(--accent)",
+                        borderRadius: "4px",
+                    },
+                    "& select": {
+                        backgroundColor: "var(--bg)",
+                        border: "1px solid var(--border)",
+                        borderRadius: "6px",
+                        color: "var(--fg)",
+                        fontFamily: "inherit",
+                        fontSize: "12px",
+                        padding: "4px 6px",
+                        outline: "none",
+                    },
+                },
             }),
             wrapCompartment.of(EditorView.lineWrapping),
         ],
@@ -186,6 +252,7 @@ export function mountMD(
         },
         triggerCompletion: () => startCompletion(view),
         scrollTo: (pos: number) => scrollToHeading(view, pos),
+        openSearch: () => openSearchPanel(view),
         destroy: () => view.destroy(),
     };
 }
