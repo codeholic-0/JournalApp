@@ -256,7 +256,9 @@ export default function NoteEditor() {
                     className={`flex items-center gap-3 ${focusMode ? "hidden" : ""}`}
                 >
                     <FileText size={20} className="text-primary shrink-0" />
+                    <label htmlFor="note-title" className="sr-only">Title</label>
                     <input
+                        id="note-title"
                         {...register("title")}
                         placeholder="Title"
                         className="flex-1 text-xl font-semibold bg-transparent text-on-surface placeholder:text-on-surface-muted border-none focus:outline-none"

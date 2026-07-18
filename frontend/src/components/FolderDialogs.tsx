@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
     X,
     Folder,
@@ -418,12 +418,36 @@ function Modal({
     title: string;
     children: React.ReactNode;
 }) {
+    const cardRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!cardRef.current) return;
+        const el = cardRef.current;
+        const focusable = el.querySelectorAll<HTMLElement>(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        );
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        first?.focus();
+        const handler = (e: KeyboardEvent) => {
+            if (e.key !== "Tab") return;
+            if (e.shiftKey) {
+                if (document.activeElement === first) { e.preventDefault(); last?.focus(); }
+            } else {
+                if (document.activeElement === last) { e.preventDefault(); first?.focus(); }
+            }
+        };
+        el.addEventListener("keydown", handler);
+        return () => el.removeEventListener("keydown", handler);
+    }, []);
+
     return (
         <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
             onClick={onClose}
         >
             <div
+                ref={cardRef}
                 className="bg-surface-raised rounded-xl border border-outline p-6 w-full max-w-md mx-auto space-y-4 shadow-xl animate-scaleIn max-h-[90vh] overflow-y-auto"
                 onClick={(e) => e.stopPropagation()}
             >
@@ -433,6 +457,7 @@ function Modal({
                     </h3>
                     <button
                         onClick={onClose}
+                        aria-label="Close dialog"
                         className="p-1 rounded-md text-on-surface-muted hover:bg-hover transition-colors"
                     >
                         <X size={18} />

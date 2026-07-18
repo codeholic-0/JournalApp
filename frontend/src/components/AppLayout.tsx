@@ -53,6 +53,7 @@ function SectionDivider({
         <div>
             <button
                 onClick={() => toggle(section)}
+                aria-expanded={!isCollapsed}
                 className="flex items-center gap-2 w-full px-3 py-1.5 text-xs font-semibold text-on-surface-muted hover:text-on-surface transition-colors"
             >
                 <ChevronDown
@@ -219,6 +220,9 @@ export default function AppLayout() {
 
     return (
         <div className="min-h-screen bg-surface">
+            <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[60] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-surface-raised focus:text-on-surface focus:border focus:border-outline focus:shadow-lg">
+                Skip to content
+            </a>
             {/* Mobile hamburger */}
             <button
                 className={`lg:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-surface-alt border border-outline text-on-surface shadow-sm transition-opacity duration-200 ${
@@ -244,6 +248,7 @@ export default function AppLayout() {
                     {!collapsed && (
                         <div
                             ref={dragRef}
+                            aria-label="Resize sidebar"
                             className="absolute right-0 inset-y-0 w-1.5 cursor-col-resize z-10 hover:bg-primary/30 active:bg-primary/50 transition-colors"
                         />
                     )}
@@ -285,6 +290,7 @@ export default function AppLayout() {
 
             {/* Main */}
             <main
+                id="main-content"
                 className={`transition-all duration-300 p-6 pt-16 lg:pt-6 animate-fadeIn ${focusMode ? "ml-0! pt-0!" : ""}`}
                 style={
                     {

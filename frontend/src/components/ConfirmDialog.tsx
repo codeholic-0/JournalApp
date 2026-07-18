@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { AlertTriangle, X } from "lucide-react";
 
 interface ConfirmDialogProps {
@@ -19,6 +20,29 @@ export default function ConfirmDialog({
     confirmLabel,
     variant = "danger",
 }: ConfirmDialogProps) {
+    const cardRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!open || !cardRef.current) return;
+        const el = cardRef.current;
+        const focusable = el.querySelectorAll<HTMLElement>(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        );
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        first?.focus();
+        const handler = (e: KeyboardEvent) => {
+            if (e.key !== "Tab") return;
+            if (e.shiftKey) {
+                if (document.activeElement === first) { e.preventDefault(); last?.focus(); }
+            } else {
+                if (document.activeElement === last) { e.preventDefault(); first?.focus(); }
+            }
+        };
+        el.addEventListener("keydown", handler);
+        return () => el.removeEventListener("keydown", handler);
+    }, [open]);
+
     if (!open) return null;
 
     const isDanger = variant !== "default";
@@ -33,6 +57,7 @@ export default function ConfirmDialog({
             onClick={onClose}
         >
             <div
+                ref={cardRef}
                 className="bg-surface-raised rounded-xl border border-outline p-6 max-w-sm w-full space-y-4 shadow-xl animate-scaleIn"
                 onClick={(e) => e.stopPropagation()}
             >
@@ -56,6 +81,7 @@ export default function ConfirmDialog({
                     </div>
                     <button
                         onClick={onClose}
+                        aria-label="Close dialog"
                         className="p-1 rounded-md text-on-surface-muted hover:bg-hover transition-colors"
                     >
                         <X size={18} />

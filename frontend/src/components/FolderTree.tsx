@@ -96,6 +96,7 @@ export default function FolderTree() {
                                     e.stopPropagation();
                                     toggleExpanded(folder.id);
                                 }}
+                                aria-label={isExpanded ? "Collapse folder" : "Expand folder"}
                             >
                                 {isExpanded ? (
                                     <ChevronDown size={14} />
@@ -119,6 +120,7 @@ export default function FolderTree() {
                                     ? setMenuState(null)
                                     : openMenu(e, folder)
                             }
+                            aria-label="Folder options"
                             className="p-1 rounded-md text-on-surface-muted hover:bg-hover"
                         >
                             <MoreHorizontal size={14} />
