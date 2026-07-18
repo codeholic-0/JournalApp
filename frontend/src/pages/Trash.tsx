@@ -12,6 +12,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useTrashNotes, useRestoreNote, usePurgeNote } from "../hooks/useNotes";
 import { SkeletonCard } from "../components/Skeleton";
 import ConfirmDialog from "../components/ConfirmDialog";
+import EmptyState from "../components/EmptyState";
 
 export default function Trash() {
     const { user } = useAuth();
@@ -72,12 +73,7 @@ export default function Trash() {
             <h1 className="text-2xl font-bold text-on-surface">Trash</h1>
 
             {notes.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 space-y-4">
-                    <Trash2 size={48} className="text-on-surface-muted" />
-                    <p className="text-on-surface-muted text-sm">
-                        Trash is empty.
-                    </p>
-                </div>
+                <EmptyState icon={Trash2} title="Trash is empty." />
             ) : (
                 <>
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

@@ -14,13 +14,24 @@ import {
     List,
 } from "lucide-react";
 import { toast } from "sonner";
-import { DndContext, type DragEndEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
-import { SortableContext, rectSortingStrategy, useSortable } from "@dnd-kit/sortable";
+import {
+    DndContext,
+    type DragEndEvent,
+    PointerSensor,
+    useSensor,
+    useSensors,
+} from "@dnd-kit/core";
+import {
+    SortableContext,
+    rectSortingStrategy,
+    useSortable,
+} from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useAuth } from "../hooks/useAuth";
 import { SkeletonCard } from "../components/Skeleton";
 import ConfirmDialog from "../components/ConfirmDialog";
 import NoteTypeBadge from "../components/NoteTypeBadge";
+import EmptyState from "../components/EmptyState";
 import {
     useNotes,
     useDeleteNote,
@@ -44,79 +55,86 @@ function SortableNoteCard({
 }) {
     const toggleFav = useToggleFavorite();
     const togglePin = useTogglePin();
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: note.id });
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({ id: note.id });
 
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
         opacity: isDragging ? 0.5 : 1,
-        zIndex: isDragging ? 999 : "auto" as const,
+        zIndex: isDragging ? 999 : ("auto" as const),
     };
 
     return (
-    <div
-        ref={setNodeRef}
-        style={{
-            ...style,
-            padding: "var(--card-p)",
-            borderTop: note.color ? `4px solid ${note.color}` : undefined,
-        }}
-        className="group bg-surface-alt rounded-xl border border-outline border-t-4 space-y-3 hover:scale-[1.02] hover:shadow-md transition-all duration-200"
-    >
-        <div className="flex items-start gap-3">
-            <button
-                {...attributes}
-                {...listeners}
-                className="p-0.5 mt-0.5 cursor-grab active:cursor-grabbing text-on-surface-muted hover:text-on-surface transition-colors touch-none"
-                aria-label="Drag to reorder"
-            >
-                <GripVertical size={16} />
-            </button>
-            <FileText size={18} className="text-primary shrink-0 mt-0.5" />
-            <div className="min-w-0 flex-1">
-                <h2 className="font-semibold text-on-surface truncate">
-                    {note.title}
-                </h2>
+        <div
+            ref={setNodeRef}
+            style={{
+                ...style,
+                padding: "var(--card-p)",
+                borderTop: note.color ? `4px solid ${note.color}` : undefined,
+            }}
+            className="group bg-surface-alt rounded-xl border border-outline border-t-4 space-y-3 hover:scale-[1.02] hover:shadow-md transition-all duration-200"
+        >
+            <div className="flex items-start gap-3">
+                <button
+                    {...attributes}
+                    {...listeners}
+                    className="p-0.5 mt-0.5 cursor-grab active:cursor-grabbing text-on-surface-muted hover:text-on-surface transition-colors touch-none"
+                    aria-label="Drag to reorder"
+                >
+                    <GripVertical size={16} />
+                </button>
+                <FileText size={18} className="text-primary shrink-0 mt-0.5" />
+                <div className="min-w-0 flex-1">
+                    <h2 className="font-semibold text-on-surface truncate">
+                        {note.title}
+                    </h2>
+                </div>
+                <button
+                    onClick={() => toggleFav.mutate({ username, id: note.id })}
+                    className={`shrink-0 transition-colors ${
+                        note.favorite
+                            ? "text-amber-400"
+                            : "text-on-surface-muted max-lg:opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
+                    }`}
+                    aria-label="Toggle favorite"
+                >
+                    <Star size={14} />
+                </button>
+                <button
+                    onClick={() => togglePin.mutate({ username, id: note.id })}
+                    className={`shrink-0 transition-colors ${
+                        note.pinned
+                            ? "text-primary"
+                            : "text-on-surface-muted max-lg:opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
+                    }`}
+                    aria-label="Toggle pin"
+                >
+                    <Pin size={14} />
+                </button>
+                <NoteTypeBadge type={note.noteType} />
             </div>
-            <button
-                onClick={() => toggleFav.mutate({ username, id: note.id })}
-                className={`shrink-0 transition-colors ${
-                    note.favorite
-                        ? "text-amber-400"
-                        : "text-on-surface-muted max-lg:opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
-                }`}
-                aria-label="Toggle favorite"
-            >
-                <Star size={14} />
-            </button>
-            <button
-                onClick={() => togglePin.mutate({ username, id: note.id })}
-                className={`shrink-0 transition-colors ${
-                    note.pinned
-                        ? "text-primary"
-                        : "text-on-surface-muted max-lg:opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
-                }`}
-                aria-label="Toggle pin"
-            >
-                <Pin size={14} />
-            </button>
-            <NoteTypeBadge type={note.noteType} />
+
+            {note.content && (
+                <p className="text-sm text-on-surface-muted line-clamp-2 leading-relaxed">
+                    {note.content}
+                </p>
+            )}
+
+            <div className="flex items-center gap-1.5 text-xs text-on-surface-muted">
+                <Calendar size={12} />
+                <span>{new Date(note.createdAt).toLocaleDateString()}</span>
+            </div>
+
+            <NoteCardActions noteId={note.id} onDelete={() => onDelete(note)} />
         </div>
-
-        {note.content && (
-            <p className="text-sm text-on-surface-muted line-clamp-2 leading-relaxed">
-                {note.content}
-            </p>
-        )}
-
-        <div className="flex items-center gap-1.5 text-xs text-on-surface-muted">
-            <Calendar size={12} />
-            <span>{new Date(note.createdAt).toLocaleDateString()}</span>
-        </div>
-
-        <NoteCardActions noteId={note.id} onDelete={() => onDelete(note)} />
-    </div>
-);
+    );
 }
 
 export default function Dashboard() {
@@ -167,15 +185,19 @@ export default function Dashboard() {
     );
 
     const notes = data?.content ?? [];
-    const displayNotes = (showFavorites ? notes.filter((n) => n.favorite) : notes)
-        .sort((a, b) => {
-            if (a.pinned && !b.pinned) return -1;
-            if (!a.pinned && b.pinned) return 1;
-            if (a.sortOrder && b.sortOrder) return a.sortOrder.localeCompare(b.sortOrder);
-            if (a.sortOrder) return -1;
-            if (b.sortOrder) return 1;
-            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        });
+    const displayNotes = (
+        showFavorites ? notes.filter((n) => n.favorite) : notes
+    ).sort((a, b) => {
+        if (a.pinned && !b.pinned) return -1;
+        if (!a.pinned && b.pinned) return 1;
+        if (a.sortOrder && b.sortOrder)
+            return a.sortOrder.localeCompare(b.sortOrder);
+        if (a.sortOrder) return -1;
+        if (b.sortOrder) return 1;
+        return (
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+    });
     const totalPages = data?.page?.totalPages ?? 0;
 
     const handleDragEnd = useCallback(
@@ -191,10 +213,10 @@ export default function Dashboard() {
             items.splice(overIndex, 0, dragged);
 
             const idx = items.findIndex((n) => n.id === active.id);
-            const before = idx > 0 ? items[idx - 1].sortOrder ?? null : null;
+            const before = idx > 0 ? (items[idx - 1].sortOrder ?? null) : null;
             const after =
                 idx < items.length - 1
-                    ? items[idx + 1].sortOrder ?? null
+                    ? (items[idx + 1].sortOrder ?? null)
                     : null;
 
             const newSortOrder = generateSortOrder(before, after);
@@ -210,12 +232,10 @@ export default function Dashboard() {
 
     if (!currentWorkspaceId) {
         return (
-            <div className="flex flex-col items-center justify-center py-20 space-y-4">
-                <FolderOpen size={48} className="text-on-surface-muted" />
-                <p className="text-on-surface-muted text-sm">
-                    Select a workspace from the sidebar to get started.
-                </p>
-            </div>
+            <EmptyState
+                icon={FolderOpen}
+                title="Select a workspace from the sidebar to get started."
+            />
         );
     }
 
@@ -338,39 +358,42 @@ export default function Dashboard() {
                             items={displayNotes.map((n) => n.id)}
                             strategy={rectSortingStrategy}
                         >
-                        {dashboardView === "grid" ? (
-                            <div className="grid sm:grid-cols-2 lg:grid-cols-3" style={{ gap: "var(--grid-gap)" }}>
-                                {displayNotes.map((j) => (
-                                    <SortableNoteCard
-                                        key={j.id}
-                                        note={j}
-                                        username={username}
-                                        onDelete={(note) =>
-                                            setDeleteTarget({
-                                                id: note.id,
-                                                title: note.title,
-                                            })
-                                        }
-                                    />
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="flex flex-col gap-2">
-                                {displayNotes.map((j) => (
-                                    <SortableNoteCard
-                                        key={j.id}
-                                        note={j}
-                                        username={username}
-                                        onDelete={(note) =>
-                                            setDeleteTarget({
-                                                id: note.id,
-                                                title: note.title,
-                                            })
-                                        }
-                                    />
-                                ))}
-                            </div>
-                        )}
+                            {dashboardView === "grid" ? (
+                                <div
+                                    className="grid sm:grid-cols-2 lg:grid-cols-3"
+                                    style={{ gap: "var(--grid-gap)" }}
+                                >
+                                    {displayNotes.map((j) => (
+                                        <SortableNoteCard
+                                            key={j.id}
+                                            note={j}
+                                            username={username}
+                                            onDelete={(note) =>
+                                                setDeleteTarget({
+                                                    id: note.id,
+                                                    title: note.title,
+                                                })
+                                            }
+                                        />
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="flex flex-col gap-2">
+                                    {displayNotes.map((j) => (
+                                        <SortableNoteCard
+                                            key={j.id}
+                                            note={j}
+                                            username={username}
+                                            onDelete={(note) =>
+                                                setDeleteTarget({
+                                                    id: note.id,
+                                                    title: note.title,
+                                                })
+                                            }
+                                        />
+                                    ))}
+                                </div>
+                            )}
                         </SortableContext>
                     </DndContext>
 
