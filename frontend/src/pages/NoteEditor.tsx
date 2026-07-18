@@ -12,6 +12,7 @@ import {
     WrapText,
     Plus,
     List,
+    Search,
 } from "lucide-react";
 import { toast } from "sonner";
 import { get, set, del } from "idb-keyval";
@@ -81,6 +82,7 @@ export default function NoteEditor() {
         triggerCompletion,
         headings,
         scrollTo,
+        openSearch,
     } = useMdEditor({
         onDocChange: () => {
             dirtyRef.current = true;
@@ -214,12 +216,18 @@ export default function NoteEditor() {
         <div
             className={`max-w-5xl mx-auto space-y-6 animate-fadeIn ${focusMode ? "max-w-full mx-0" : ""}`}
         >
-            <div className={`flex items-center justify-between ${focusMode ? "hidden" : ""}`}>
+            <div
+                className={`flex items-center justify-between ${focusMode ? "hidden" : ""}`}
+            >
                 <div className="flex items-center gap-3">
                     <button
                         type="button"
                         onClick={async () => {
-                            try { await del(DRAFT_KEY); } catch { /* ok */ }
+                            try {
+                                await del(DRAFT_KEY);
+                            } catch {
+                                /* ok */
+                            }
                             navigate(-1);
                         }}
                         className="p-1.5 rounded-lg text-on-surface-muted hover:bg-hover hover:text-on-surface transition-colors"
@@ -244,7 +252,9 @@ export default function NoteEditor() {
                 </button>
             )}
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                <div className={`flex items-center gap-3 ${focusMode ? "hidden" : ""}`}>
+                <div
+                    className={`flex items-center gap-3 ${focusMode ? "hidden" : ""}`}
+                >
                     <FileText size={20} className="text-primary shrink-0" />
                     <input
                         {...register("title")}
@@ -258,8 +268,12 @@ export default function NoteEditor() {
                     </p>
                 )}
 
-                <div className={`flex items-center gap-2 ${focusMode ? "hidden" : ""}`}>
-                    <label className="text-xs text-on-surface-muted">Type</label>
+                <div
+                    className={`flex items-center gap-2 ${focusMode ? "hidden" : ""}`}
+                >
+                    <label className="text-xs text-on-surface-muted">
+                        Type
+                    </label>
                     <select
                         {...register("noteType")}
                         defaultValue="BASIC"
@@ -277,7 +291,11 @@ export default function NoteEditor() {
                     <div className="flex-1" />
                     <button
                         type="button"
-                        onClick={() => setEditorMode(editorMode === "read" ? "edit" : "read")}
+                        onClick={() =>
+                            setEditorMode(
+                                editorMode === "read" ? "edit" : "read",
+                            )
+                        }
                         className={`flex items-center gap-1 px-2 py-1 rounded text-xs border border-outline transition-colors ${
                             editorMode === "read"
                                 ? "bg-primary/10 text-primary border-primary/30"
@@ -297,7 +315,11 @@ export default function NoteEditor() {
                         }`}
                         title="Focus mode"
                     >
-                        {focusMode ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+                        {focusMode ? (
+                            <Minimize2 size={14} />
+                        ) : (
+                            <Maximize2 size={14} />
+                        )}
                     </button>
                 </div>
 
@@ -322,7 +344,9 @@ export default function NoteEditor() {
                         />
                     )}
                 </div>
-                <div className={`flex items-center gap-2 ${focusMode ? "hidden" : ""}`}>
+                <div
+                    className={`flex items-center gap-2 ${focusMode ? "hidden" : ""}`}
+                >
                     {!isEdit && (
                         <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-xs font-medium">
                             Draft
@@ -335,50 +359,63 @@ export default function NoteEditor() {
                     )}
                 </div>
 
-                <div
-                    className={`flex items-center justify-between border border-outline rounded-lg px-3 py-1.5 text-xs text-on-surface-muted ${focusMode ? "hidden" : ""}`}
-                >
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setWrapped(!wrapped);
-                            setWrap(!wrapped);
-                        }}
-                        className={`flex items-center gap-1.5 px-2 py-1 rounded transition-colors ${
-                            wrapped
-                                ? "bg-primary/10 text-primary"
-                                : "hover:bg-hover"
-                        }`}
-                    >
-                        <WrapText size={14} />
-                        Wrap
-                    </button>
-
-                    <button
-                        type="button"
-                        onClick={triggerCompletion}
-                        className="flex items-center gap-1.5 px-2 py-1 rounded hover:bg-hover transition-colors"
-                        title="Insert block (/)"
-                    >
-                        <Plus size={14} />
-                    </button>
-
-                    {headings.length > 0 && (
+                <div className={`${focusMode ? "hidden" : ""}`}>
+                    <div className="flex items-center gap-1 flex-wrap border border-outline rounded-lg px-3 py-1.5 text-xs text-on-surface-muted">
                         <button
                             type="button"
-                            onClick={() => setShowOutline(!showOutline)}
+                            onClick={() => {
+                                setWrapped(!wrapped);
+                                setWrap(!wrapped);
+                            }}
                             className={`flex items-center gap-1.5 px-2 py-1 rounded transition-colors ${
-                                showOutline
+                                wrapped
                                     ? "bg-primary/10 text-primary"
                                     : "hover:bg-hover"
                             }`}
-                            title="Outline"
                         >
-                            <List size={14} />
+                            <WrapText size={14} />
+                            Wrap
                         </button>
-                    )}
 
-                    <div className="flex items-center gap-3">
+                        <button
+                            type="button"
+                            onClick={triggerCompletion}
+                            className="flex items-center gap-1.5 px-2 py-1 rounded hover:bg-hover transition-colors"
+                            title="Insert block (/)"
+                        >
+                            <Plus size={14} />
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={openSearch}
+                            className="flex items-center gap-1.5 px-2 py-1 rounded hover:bg-hover transition-colors"
+                            title="Find (Ctrl+F)"
+                        >
+                            <Search size={14} />
+                        </button>
+
+                        {headings.length > 0 && (
+                            <button
+                                type="button"
+                                onClick={() => setShowOutline(!showOutline)}
+                                className={`flex items-center gap-1.5 px-2 py-1 rounded transition-colors ${
+                                    showOutline
+                                        ? "bg-primary/10 text-primary"
+                                        : "hover:bg-hover"
+                                }`}
+                                title="Outline"
+                            >
+                                <List size={14} />
+                            </button>
+                        )}
+
+                        <span className="ml-auto hidden sm:flex items-center gap-3">
+                            <span>{stats.words} words</span>
+                            <span>{stats.chars} chars</span>
+                        </span>
+                    </div>
+                    <div className="flex sm:hidden justify-end gap-3 px-3 py-1 text-xs text-on-surface-muted">
                         <span>{stats.words} words</span>
                         <span>{stats.chars} chars</span>
                     </div>
@@ -394,10 +431,7 @@ export default function NoteEditor() {
                             className="flex items-center gap-2 px-5 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-hover disabled:opacity-50 transition-colors active:scale-[0.98]"
                         >
                             {isSubmitting && (
-                                <Loader2
-                                    size={14}
-                                    className="animate-spin"
-                                />
+                                <Loader2 size={14} className="animate-spin" />
                             )}
                             {isSubmitting
                                 ? "Saving..."
@@ -428,8 +462,7 @@ export default function NoteEditor() {
                                 }`}
                             >
                                 {autoSaveStatus === "saved" && "Saved ✓"}
-                                {autoSaveStatus === "failed" &&
-                                    "Save failed"}
+                                {autoSaveStatus === "failed" && "Save failed"}
                             </span>
                         )}
                     </div>
