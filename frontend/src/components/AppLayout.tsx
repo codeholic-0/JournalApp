@@ -17,6 +17,8 @@ import FolderTree from "./FolderTree";
 import { useAuth } from "../hooks/useAuth";
 import { useVaultStore } from "../store/vaultStore";
 import Breadcrumbs from "./Breadcrumbs";
+import ShortcutOverlay from "./ShortcutOverlay";
+import { useShortcuts } from "../hooks/useShortcuts";
 
 const navItems = [
     { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
@@ -66,7 +68,9 @@ function SectionDivider({
                     isCollapsed ? "grid-rows-[0fr]" : "grid-rows-[1fr]"
                 }`}
             >
-                <div className={isCollapsed ? "overflow-hidden" : ""}>{children}</div>
+                <div className={isCollapsed ? "overflow-hidden" : ""}>
+                    {children}
+                </div>
             </div>
         </div>
     );
@@ -82,6 +86,7 @@ export default function AppLayout() {
     const setSidebarWidth = useVaultStore((s) => s.setSidebarWidth);
     const collapsed = sidebarWidth <= 80;
     const focusMode = useVaultStore((s) => s.focusMode);
+    const { showShortcuts, setShowShortcuts } = useShortcuts();
     const dragRef = useRef<HTMLDivElement>(null);
 
     const toggleCollapsed = useCallback(() => {
@@ -188,7 +193,7 @@ export default function AppLayout() {
             </nav>
 
             {/* Account link */}
-            <div className="border-t border-outline p-2">
+            <div className="border-t border-outline p-2 space-y-1">
                 <NavLink
                     to={accountItem.to}
                     end={accountItem.end}
@@ -198,6 +203,16 @@ export default function AppLayout() {
                     <UserCircle size={18} />
                     {!collapsed && <span>{user?.username ?? "Account"}</span>}
                 </NavLink>
+                <button
+                    onClick={() => setShowShortcuts(true)}
+                    className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm text-on-surface-muted hover:bg-hover hover:text-on-surface transition-colors"
+                    title="Keyboard shortcuts"
+                >
+                    <span className="w-5 h-5 flex items-center justify-center text-xs font-bold border border-outline rounded">
+                        ?
+                    </span>
+                    {!collapsed && <span>Keyboard shortcuts</span>}
+                </button>
             </div>
         </>
     );
@@ -279,9 +294,13 @@ export default function AppLayout() {
                     } as React.CSSProperties
                 }
             >
-                <Breadcrumbs/>
+                <Breadcrumbs />
                 <Outlet />
             </main>
+            <ShortcutOverlay
+                open={showShortcuts}
+                onClose={() => setShowShortcuts(false)}
+            />
         </div>
     );
 }
