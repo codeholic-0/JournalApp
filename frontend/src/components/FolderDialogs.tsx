@@ -182,7 +182,7 @@ export default function FolderDialogs({
         try {
             await deleteFolder.mutateAsync({
                 id: target.id,
-                force: forceDelete,
+                force: true,
             });
             toast.success("Folder deleted");
             onClose();

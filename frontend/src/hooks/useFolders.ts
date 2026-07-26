@@ -44,6 +44,7 @@ export const useDeleteFolder = (workspaceId: string) => {
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: ["folders", workspaceId] });
             qc.invalidateQueries({ queryKey: ["unfiledCount"] });
+            qc.invalidateQueries({ queryKey: ["notes"] });
         },
     });
 };
