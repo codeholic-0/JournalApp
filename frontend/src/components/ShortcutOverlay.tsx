@@ -48,20 +48,24 @@ export default function ShortcutOverlay({
         <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
             onClick={onClose}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="shortcuts-dialog-title"
         >
             <div
                 className="bg-surface-raised border border-outline rounded-xl shadow-xl w-full max-w-sm p-6 space-y-4"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-semibold text-on-surface">
+                    <h2 id="shortcuts-dialog-title" className="text-lg font-semibold text-on-surface">
                         Keyboard Shortcuts
                     </h2>
                     <button
                         onClick={onClose}
                         className="p-1 rounded-md text-on-surface-muted hover:bg-hover hover:text-on-surface"
+                        aria-label="Close dialog"
                     >
-                        <X size={18} />
+                        <X size={18} aria-hidden="true" />
                     </button>
                 </div>
                 <div className="space-y-1">

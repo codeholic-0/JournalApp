@@ -17,9 +17,9 @@ describe("useDebouncedCallback", () => {
             { initialProps: { cb: callback, delay: 100 } },
         );
 
-        const first = result.current;
+        const first = result.current.call;
         rerender({ cb: callback, delay: 100 });
-        expect(result.current).toBe(first);
+        expect(result.current.call).toBe(first);
     });
 
     it("should keep the function reference stable when delay changes", () => {
@@ -27,9 +27,9 @@ describe("useDebouncedCallback", () => {
             ({ delay }) => useDebouncedCallback(() => {}, delay),
             { initialProps: { delay: 100 } },
         );
-        const first = result.current;
+        const first = result.current.call;
         rerender({ delay: 200 });
-        expect(result.current).toBe(first);
+        expect(result.current.call).toBe(first);
     });
 
     it("should invoke the latest callback when debounced fires", () => {
@@ -40,9 +40,9 @@ describe("useDebouncedCallback", () => {
             { initialProps: { cb: first } },
         );
 
-        act(() => result.current());
+        act(() => result.current.call());
         rerender({ cb: second });
-        act(() => result.current());
+        act(() => result.current.call());
         act(() => vi.advanceTimersByTime(150));
 
         expect(first).not.toHaveBeenCalled();
@@ -55,7 +55,7 @@ describe("useDebouncedCallback", () => {
             useDebouncedCallback(callback, 100),
         );
 
-        act(() => result.current("a", 1));
+        act(() => result.current.call("a", 1));
         act(() => vi.advanceTimersByTime(150));
         expect(callback).toHaveBeenCalledWith("a", 1);
     });
@@ -67,12 +67,24 @@ describe("useDebouncedCallback", () => {
         );
 
         act(() => {
-            result.current();
-            result.current("x");
-            result.current("y");
+            result.current.call();
+            result.current.call("x");
+            result.current.call("y");
         });
         act(() => vi.advanceTimersByTime(150));
         expect(callback).toHaveBeenCalledTimes(1);
         expect(callback).toHaveBeenCalledWith("y");
+    });
+
+    it("should expose a cancel method", () => {
+        const callback = vi.fn();
+        const { result } = renderHook(() =>
+            useDebouncedCallback(callback, 100),
+        );
+
+        act(() => result.current.call());
+        act(() => result.current.cancel());
+        act(() => vi.advanceTimersByTime(150));
+        expect(callback).not.toHaveBeenCalled();
     });
 });

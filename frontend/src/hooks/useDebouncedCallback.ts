@@ -5,7 +5,7 @@ import { debounce } from "./debounce";
 export function useDebouncedCallback<T extends (...args: any[]) => void>(
     callback: T,
     delay: number,
-): (...args: Parameters<T>) => void {
+): { call: (...args: Parameters<T>) => void; cancel: () => void } {
     const callbackRef = useRef(callback);
     const debouncedRef = useRef<ReturnType<typeof debounce<T>> | null>(null);
 
@@ -19,7 +19,13 @@ export function useDebouncedCallback<T extends (...args: any[]) => void>(
         callbackRef.current = callback;
     });
 
-    return useCallback((...args: Parameters<T>) => {
+    const call = useCallback((...args: Parameters<T>) => {
         debouncedRef.current?.call(...args);
     }, []);
+
+    const cancel = useCallback(() => {
+        debouncedRef.current?.cancel();
+    }, []);
+
+    return { call, cancel };
 }

@@ -14,7 +14,7 @@ export const updatePreferences = async (
     username: string,
     body: Partial<UserPreferences>,
 ): Promise<UserPreferences> => {
-    const { data } = await api.put<UserPreferences>(
+    const { data } = await api.patch<UserPreferences>(
         `/api/users/${username}/prefs`,
         body,
     );

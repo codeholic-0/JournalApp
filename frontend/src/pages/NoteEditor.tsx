@@ -71,6 +71,7 @@ export default function NoteEditor() {
     const [hasUnsaved, setHasUnsaved] = useState(false);
     const serverContentRef = useRef("");
     const getDebouncedSaveRef = useRef<() => void>(() => {});
+    const statusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const {
         editorRef,
@@ -90,7 +91,7 @@ export default function NoteEditor() {
         },
     });
 
-    const debouncedSave = useDebouncedCallback(() => {
+    const { call: debouncedSave } = useDebouncedCallback(() => {
         const content = getValue();
         const title = getValues("title");
         if (content === lastSavedRef.current) return;
@@ -99,7 +100,11 @@ export default function NoteEditor() {
         lastSavedRef.current = content;
         setAutoSaveStatus("saved");
         setHasUnsaved(isEdit && content !== serverContentRef.current);
-        setTimeout(() => setAutoSaveStatus("idle"), 3000);
+        if (statusTimeoutRef.current) clearTimeout(statusTimeoutRef.current);
+        statusTimeoutRef.current = setTimeout(
+            () => setAutoSaveStatus("idle"),
+            3000,
+        );
     }, 1500);
 
     useEffect(() => {
@@ -172,7 +177,10 @@ export default function NoteEditor() {
             }
         };
         window.addEventListener("beforeunload", handler);
-        return () => window.removeEventListener("beforeunload", handler);
+        return () => {
+            window.removeEventListener("beforeunload", handler);
+            if (statusTimeoutRef.current) clearTimeout(statusTimeoutRef.current);
+        };
     }, []);
 
     const currentWorkspaceId = useVaultStore((s) => s.currentWorkspaceId);
@@ -203,6 +211,7 @@ export default function NoteEditor() {
                 } else {
                     await del("note-draft:__new__");
                 }
+                dirtyRef.current = false;
                 navigate("/");
             } catch {
                 toast.error("Failed to save note");
@@ -251,12 +260,15 @@ export default function NoteEditor() {
                     <span className="hidden sm:inline">Exit focus</span>
                 </button>
             )}
+            {/* eslint-disable-next-line react-hooks/refs -- handleSubmit calls onSubmit only on form submission, not during render */}
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <div
                     className={`flex items-center gap-3 ${focusMode ? "hidden" : ""}`}
                 >
                     <FileText size={20} className="text-primary shrink-0" />
-                    <label htmlFor="note-title" className="sr-only">Title</label>
+                    <label htmlFor="note-title" className="sr-only">
+                        Title
+                    </label>
                     <input
                         id="note-title"
                         {...register("title")}

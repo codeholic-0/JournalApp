@@ -7,6 +7,7 @@ import {
     Menu,
     X,
     PanelLeftOpen,
+    PanelLeftClose,
     Trash2,
     ChevronDown,
 } from "lucide-react";
@@ -80,6 +81,7 @@ function SectionDivider({
 export default function AppLayout() {
     const { user } = useAuth();
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
 
@@ -87,6 +89,7 @@ export default function AppLayout() {
     const setSidebarWidth = useVaultStore((s) => s.setSidebarWidth);
     const collapsed = sidebarWidth <= 80;
     const focusMode = useVaultStore((s) => s.focusMode);
+    const currentWorkspaceId = useVaultStore((s) => s.currentWorkspaceId);
     const { showShortcuts, setShowShortcuts } = useShortcuts();
     const dragRef = useRef<HTMLDivElement>(null);
 
@@ -165,7 +168,7 @@ export default function AppLayout() {
                 <WorkspaceSwitcher
                     onNewWorkspace={() => setShowCreateModal(true)}
                 />
-                <SortSelector />
+                {currentWorkspaceId && <SortSelector />}
             </SectionDivider>
 
             {/* Primary nav */}
@@ -184,13 +187,15 @@ export default function AppLayout() {
                     </NavLink>
                 ))}
 
-                <SectionDivider
-                    label="Folders"
-                    section="folders"
-                    collapsed={collapsed}
-                >
-                    <FolderTree />
-                </SectionDivider>
+                {currentWorkspaceId && (
+                    <SectionDivider
+                        label="Folders"
+                        section="folders"
+                        collapsed={collapsed}
+                    >
+                        <FolderTree />
+                    </SectionDivider>
+                )}
             </nav>
 
             {/* Account link */}
@@ -220,7 +225,7 @@ export default function AppLayout() {
 
     return (
         <div className="min-h-screen bg-surface">
-            <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[60] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-surface-raised focus:text-on-surface focus:border focus:border-outline focus:shadow-lg">
+            <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-60 focus:px-4 focus:py-2 focus:rounded-lg focus:bg-surface-raised focus:text-on-surface focus:border focus:border-outline focus:shadow-lg">
                 Skip to content
             </a>
             {/* Mobile hamburger */}
@@ -236,18 +241,30 @@ export default function AppLayout() {
                 <Menu size={20} />
             </button>
 
+            {/* Desktop sidebar toggle */}
+            <div className="hidden lg:flex fixed top-4 z-50" style={{ left: desktopSidebarOpen ? `calc(${collapsed ? 64 : sidebarWidth}px + 0.5rem)` : "0.5rem" }}>
+                <button
+                    onClick={() => setDesktopSidebarOpen(!desktopSidebarOpen)}
+                    className="p-2 rounded-lg bg-surface-alt border border-outline text-on-surface shadow-sm hover:bg-hover transition-colors"
+                    aria-label={desktopSidebarOpen ? "Close sidebar" : "Open sidebar"}
+                >
+                    {desktopSidebarOpen ? <PanelLeftClose size={20} /> : <PanelLeftOpen size={20} />}
+                </button>
+            </div>
+
             {/* Desktop sidebar */}
             <div className="hidden lg:block">
                 <aside
                     className={`fixed inset-y-0 left-0 z-40 flex flex-col border-r border-outline bg-surface-alt overflow-y-auto transition-[width] duration-300 max-lg:max-w-[85vw] ${
                         collapsed ? "overflow-hidden" : ""
-                    } ${isDragging ? "transition-none" : ""} ${focusMode ? "hidden" : ""}`}
+                    } ${isDragging ? "transition-none" : ""} ${focusMode || !desktopSidebarOpen ? "hidden" : ""}`}
                     style={{ width: collapsed ? 64 : sidebarWidth }}
                 >
                     {sidebarInner}
                     {!collapsed && (
                         <div
                             ref={dragRef}
+                            role="separator"
                             aria-label="Resize sidebar"
                             className="absolute right-0 inset-y-0 w-1.5 cursor-col-resize z-10 hover:bg-primary/30 active:bg-primary/50 transition-colors"
                         />
@@ -291,12 +308,14 @@ export default function AppLayout() {
             {/* Main */}
             <main
                 id="main-content"
-                className={`transition-all duration-300 p-6 pt-16 lg:pt-6 animate-fadeIn ${focusMode ? "ml-0! pt-0!" : ""}`}
+                className={`transition-all duration-300 p-6 pt-16 lg:pt-6 animate-fadeIn ${focusMode || !desktopSidebarOpen ? "ml-0! pt-0!" : ""}`}
                 style={
                     {
-                        "--sidebar-offset": collapsed
-                            ? "64px"
-                            : `${Math.min(sidebarWidth, 400)}px`,
+                        "--sidebar-offset": !desktopSidebarOpen
+                            ? "0px"
+                            : collapsed
+                              ? "64px"
+                              : `${Math.min(sidebarWidth, 400)}px`,
                     } as React.CSSProperties
                 }
             >

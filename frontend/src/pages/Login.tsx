@@ -33,8 +33,13 @@ export default function Login() {
             await login(data.username, data.password);
             toast.success("Welcome back!");
             navigate("/", { replace: true });
-        } catch {
-            toast.error("Invalid username or password");
+        } catch (err: unknown) {
+            const msg =
+                err && typeof err === "object" && "response" in err
+                    ? (err as { response: { data?: { message?: string } } })
+                          .response?.data?.message
+                    : null;
+            toast.error(msg || "Invalid username or password");
         }
     };
 

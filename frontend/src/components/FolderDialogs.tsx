@@ -31,9 +31,14 @@ function getDescendantIds(
     parentId: string,
 ): Set<string> {
     const ids = new Set<string>([parentId]);
-    for (const f of folders) {
-        if (f.parentId && ids.has(f.parentId)) {
-            ids.add(f.id);
+    let added = true;
+    while (added) {
+        added = false;
+        for (const f of folders) {
+            if (f.parentId && ids.has(f.parentId) && !ids.has(f.id)) {
+                ids.add(f.id);
+                added = true;
+            }
         }
     }
     return ids;
@@ -88,18 +93,20 @@ export default function FolderDialogs({
                     style={{ paddingLeft: `${8 + depth * 16}px` }}
                 >
                     {children.length > 0 ? (
-                        <span
+                        <button
                             onClick={(e) => {
                                 e.stopPropagation();
                                 toggleExpanded(f.id);
                             }}
+                            aria-label={isExpanded ? "Collapse folder" : "Expand folder"}
+                            className="flex items-center"
                         >
                             {isExpanded ? (
-                                <ChevronDown size={12} />
+                                <ChevronDown size={12} aria-hidden="true" />
                             ) : (
-                                <ChevronRight size={12} />
+                                <ChevronRight size={12} aria-hidden="true" />
                             )}
-                        </span>
+                        </button>
                     ) : (
                         <span className="w-3" />
                     )}
@@ -419,6 +426,7 @@ function Modal({
     children: React.ReactNode;
 }) {
     const cardRef = useRef<HTMLDivElement>(null);
+    const titleId = title.toLowerCase().replace(/\s+/g, "-");
 
     useEffect(() => {
         if (!cardRef.current) return;
@@ -430,16 +438,23 @@ function Modal({
         const last = focusable[focusable.length - 1];
         first?.focus();
         const handler = (e: KeyboardEvent) => {
+            if (e.key === "Escape") { onClose(); return; }
             if (e.key !== "Tab") return;
             if (e.shiftKey) {
-                if (document.activeElement === first) { e.preventDefault(); last?.focus(); }
+                if (document.activeElement === first) {
+                    e.preventDefault();
+                    last?.focus();
+                }
             } else {
-                if (document.activeElement === last) { e.preventDefault(); first?.focus(); }
+                if (document.activeElement === last) {
+                    e.preventDefault();
+                    first?.focus();
+                }
             }
         };
         el.addEventListener("keydown", handler);
         return () => el.removeEventListener("keydown", handler);
-    }, []);
+    }, [onClose]);
 
     return (
         <div
@@ -448,11 +463,14 @@ function Modal({
         >
             <div
                 ref={cardRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby={titleId}
                 className="bg-surface-raised rounded-xl border border-outline p-6 w-full max-w-md mx-auto space-y-4 shadow-xl animate-scaleIn max-h-[90vh] overflow-y-auto"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-on-surface">
+                    <h3 id={titleId} className="text-lg font-semibold text-on-surface">
                         {title}
                     </h3>
                     <button
@@ -460,7 +478,7 @@ function Modal({
                         aria-label="Close dialog"
                         className="p-1 rounded-md text-on-surface-muted hover:bg-hover transition-colors"
                     >
-                        <X size={18} />
+                        <X size={18} aria-hidden="true" />
                     </button>
                 </div>
                 {children}

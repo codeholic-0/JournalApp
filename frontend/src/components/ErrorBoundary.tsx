@@ -23,8 +23,8 @@ export default class ErrorBoundary extends Component<Props, State> {
     render() {
         if (this.state.hasError) {
             return (
-                <div className="min-h-screen flex flex-col items-center justify-center bg-surface gap-4 animate-fadeIn">
-                    <AlertTriangle size={48} className="text-red-400" />
+                <div className="min-h-screen flex flex-col items-center justify-center bg-surface gap-4 animate-fadeIn" role="alert">
+                    <AlertTriangle size={48} className="text-red-400" aria-hidden="true" />
                     <h1 className="text-xl font-semibold text-on-surface">
                         Something went wrong
                     </h1>

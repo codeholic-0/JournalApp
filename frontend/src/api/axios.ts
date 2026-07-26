@@ -29,15 +29,21 @@ api.interceptors.request.use((cfg) => {
 });
 
 let isRefreshing = false;
-let refreshSubscribers: Array<(token: string) => void> = [];
+let refreshSubscribers: Array<{
+    resolve: (token: string) => void;
+    reject: (err: unknown) => void;
+}> = [];
 
 function notifySubscribers(token: string) {
-    refreshSubscribers.forEach((cb) => cb(token));
+    refreshSubscribers.forEach(({ resolve }) => resolve(token));
     refreshSubscribers = [];
 }
 
-function addRefreshSubscriber(cb: (token: string) => void) {
-    refreshSubscribers.push(cb);
+function addRefreshSubscriber(
+    resolve: (token: string) => void,
+    reject: (err: unknown) => void,
+) {
+    refreshSubscribers.push({ resolve, reject });
 }
 
 api.interceptors.response.use(
@@ -54,8 +60,8 @@ api.interceptors.response.use(
         }
 
         if (isRefreshing) {
-            return new Promise<string>((resolve) => {
-                addRefreshSubscriber(resolve);
+            return new Promise<string>((resolve, reject) => {
+                addRefreshSubscriber(resolve, reject);
             }).then((token) => {
                 original.headers.Authorization = `Bearer ${token}`;
                 return api(original);
@@ -76,12 +82,13 @@ api.interceptors.response.use(
             notifySubscribers(data.accessToken);
             original.headers.Authorization = `Bearer ${data.accessToken}`;
             return api(original);
-        } catch {
+        } catch (refreshError) {
             setRefreshToken(null);
             setAccessToken(null);
             onRefreshed?.(null);
+            refreshSubscribers.forEach(({ reject }) => reject(refreshError));
             refreshSubscribers = [];
-            return Promise.reject(error);
+            return Promise.reject(refreshError);
         } finally {
             isRefreshing = false;
         }

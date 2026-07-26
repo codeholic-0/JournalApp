@@ -53,7 +53,7 @@ export default function Breadcrumbs() {
                             to={crumb.to}
                             className={`transition-colors whitespace-nowrap ${
                                 i === 0
-                                    ? "opacity-0 w-0 hover:opacity-100 hover:w-auto overflow-hidden"
+                                    ? "sr-only hover:not-sr-only focus:not-sr-only focus:underline"
                                     : "hover:text-on-surface"
                             }`}
                         >

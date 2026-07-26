@@ -58,6 +58,9 @@ export default function ConfirmDialog({
         >
             <div
                 ref={cardRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="confirm-dialog-title"
                 className="bg-surface-raised rounded-xl border border-outline p-6 max-w-sm w-full space-y-4 shadow-xl animate-scaleIn"
                 onClick={(e) => e.stopPropagation()}
             >
@@ -73,9 +76,10 @@ export default function ConfirmDialog({
                                 className={
                                     isDanger ? "text-red-400" : "text-primary"
                                 }
+                                aria-hidden="true"
                             />
                         </div>
-                        <h3 className="text-lg font-semibold text-on-surface">
+                        <h3 id="confirm-dialog-title" className="text-lg font-semibold text-on-surface">
                             {title}
                         </h3>
                     </div>
@@ -84,7 +88,7 @@ export default function ConfirmDialog({
                         aria-label="Close dialog"
                         className="p-1 rounded-md text-on-surface-muted hover:bg-hover transition-colors"
                     >
-                        <X size={18} />
+                        <X size={18} aria-hidden="true" />
                     </button>
                 </div>
 

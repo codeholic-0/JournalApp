@@ -91,19 +91,20 @@ export default function FolderTree() {
                         style={{ paddingLeft: `${12 + Math.min(depth, 3) * 16}px` }}
                     >
                         {children.length > 0 ? (
-                            <span
+                            <button
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     toggleExpanded(folder.id);
                                 }}
                                 aria-label={isExpanded ? "Collapse folder" : "Expand folder"}
+                                className="flex items-center"
                             >
                                 {isExpanded ? (
-                                    <ChevronDown size={14} />
+                                    <ChevronDown size={14} aria-hidden="true" />
                                 ) : (
-                                    <ChevronRight size={14} />
+                                    <ChevronRight size={14} aria-hidden="true" />
                                 )}
-                            </span>
+                            </button>
                         ) : (
                             <span className="w-3.5" />
                         )}

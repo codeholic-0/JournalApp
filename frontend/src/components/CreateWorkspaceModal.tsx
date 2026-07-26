@@ -1,29 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { useCreateWorkspace } from "../hooks/useWorkspaces";
 import { useVaultStore } from "../store/vaultStore";
-
-const PRESET_COLORS = [
-    "#1976d2",
-    "#2e7d32",
-    "#c62828",
-    "#f57f17",
-    "#6a1b9a",
-    "#00838f",
-    "#4e342e",
-    "#78909c",
-];
-
-const PRESET_ICONS = [
-    "folder",
-    "book",
-    "star",
-    "heart",
-    "briefcase",
-    "graduation-cap",
-    "code",
-    "pen",
-];
+import IconColorPicker from "./IconColorPicker";
 
 interface Props {
     open: boolean;
@@ -33,9 +12,40 @@ interface Props {
 export default function CreateWorkspaceModal({ open, onClose }: Props) {
     const [name, setName] = useState("");
     const [icon, setIcon] = useState("folder");
-    const [color, setColor] = useState(PRESET_COLORS[0]);
+    const [color, setColor] = useState("#1976d2");
     const createWorkspace = useCreateWorkspace();
     const setCurrentId = useVaultStore((s) => s.setCurrentWorkspaceId);
+    const cardRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!open) return;
+        const handler = (e: KeyboardEvent) => {
+            if (e.key === "Escape") onClose();
+        };
+        document.addEventListener("keydown", handler);
+        return () => document.removeEventListener("keydown", handler);
+    }, [open, onClose]);
+
+    useEffect(() => {
+        if (!open || !cardRef.current) return;
+        const el = cardRef.current;
+        const focusable = el.querySelectorAll<HTMLElement>(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        );
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        first?.focus();
+        const handler = (e: KeyboardEvent) => {
+            if (e.key !== "Tab") return;
+            if (e.shiftKey) {
+                if (document.activeElement === first) { e.preventDefault(); last?.focus(); }
+            } else {
+                if (document.activeElement === last) { e.preventDefault(); first?.focus(); }
+            }
+        };
+        el.addEventListener("keydown", handler);
+        return () => el.removeEventListener("keydown", handler);
+    }, [open]);
 
     if (!open) return null;
 
@@ -57,18 +67,23 @@ export default function CreateWorkspaceModal({ open, onClose }: Props) {
             onClick={onClose}
         >
             <div
+                ref={cardRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="workspace-dialog-title"
                 className="bg-surface-raised rounded-xl border border-outline p-6 w-full max-w-md mx-auto space-y-5 shadow-xl animate-scaleIn max-h-[90vh] overflow-y-auto"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-on-surface">
+                    <h3 id="workspace-dialog-title" className="text-lg font-semibold text-on-surface">
                         New workspace
                     </h3>
                     <button
                         onClick={onClose}
+                        aria-label="Close dialog"
                         className="p-1 rounded-md text-on-surface-muted hover:bg-hover transition-colors"
                     >
-                        <X size={18} />
+                        <X size={18} aria-hidden="true" />
                     </button>
                 </div>
 
@@ -85,46 +100,12 @@ export default function CreateWorkspaceModal({ open, onClose }: Props) {
                     />
                 </div>
 
-                <div className="space-y-2">
-                    <label className="text-sm font-medium text-on-surface">
-                        Icon
-                    </label>
-                    <div className="flex gap-2 flex-wrap">
-                        {PRESET_ICONS.map((ic) => (
-                            <button
-                                key={ic}
-                                onClick={() => setIcon(ic)}
-                                className={`w-8 h-8 rounded-md text-xs font-medium transition-colors ${
-                                    icon === ic
-                                        ? "bg-primary text-white"
-                                        : "bg-surface-alt text-on-surface-muted hover:bg-hover border border-outline"
-                                }`}
-                            >
-                                {ic[0].toUpperCase()}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                <div className="space-y-2">
-                    <label className="text-sm font-medium text-on-surface">
-                        Color
-                    </label>
-                    <div className="flex gap-2 flex-wrap">
-                        {PRESET_COLORS.map((c) => (
-                            <button
-                                key={c}
-                                onClick={() => setColor(c)}
-                                className={`w-8 h-8 rounded-full transition-transform ${
-                                    color === c
-                                        ? "ring-2 ring-offset-2 ring-offset-surface-raised ring-primary scale-110"
-                                        : ""
-                                }`}
-                                style={{ backgroundColor: c }}
-                            />
-                        ))}
-                    </div>
-                </div>
+                <IconColorPicker
+                    icon={icon}
+                    color={color}
+                    onIconChange={setIcon}
+                    onColorChange={setColor}
+                />
 
                 <div className="flex gap-3 pt-2">
                     <button
