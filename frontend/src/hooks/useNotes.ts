@@ -245,20 +245,4 @@ export const useUpdateSortOrder = () => {
     });
 };
 
-export const useAutosaveNote = () => {
-    const qc = useQueryClient();
-    return useMutation({
-        mutationFn: ({
-            username,
-            id,
-            data,
-        }: {
-            username: string;
-            id: string;
-            data: NoteRequest;
-        }) => notesApi.updateNote(username, id, data),
-        onSuccess: (_data, { username }) => {
-            qc.invalidateQueries({ queryKey: ["notes", username] });
-        },
-    });
-};
+
