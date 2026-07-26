@@ -71,6 +71,7 @@ export default function NoteEditor() {
     const [hasUnsaved, setHasUnsaved] = useState(false);
     const serverContentRef = useRef("");
     const getDebouncedSaveRef = useRef<() => void>(() => {});
+    const statusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const {
         editorRef,
@@ -99,7 +100,11 @@ export default function NoteEditor() {
         lastSavedRef.current = content;
         setAutoSaveStatus("saved");
         setHasUnsaved(isEdit && content !== serverContentRef.current);
-        setTimeout(() => setAutoSaveStatus("idle"), 3000);
+        if (statusTimeoutRef.current) clearTimeout(statusTimeoutRef.current);
+        statusTimeoutRef.current = setTimeout(
+            () => setAutoSaveStatus("idle"),
+            3000,
+        );
     }, 1500);
 
     useEffect(() => {
@@ -172,7 +177,10 @@ export default function NoteEditor() {
             }
         };
         window.addEventListener("beforeunload", handler);
-        return () => window.removeEventListener("beforeunload", handler);
+        return () => {
+            window.removeEventListener("beforeunload", handler);
+            if (statusTimeoutRef.current) clearTimeout(statusTimeoutRef.current);
+        };
     }, []);
 
     const currentWorkspaceId = useVaultStore((s) => s.currentWorkspaceId);
