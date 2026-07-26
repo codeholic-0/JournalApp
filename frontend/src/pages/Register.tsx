@@ -36,8 +36,22 @@ export default function Register() {
             await registerUser(data.username, data.password);
             toast.success("Account created!");
             navigate("/", { replace: true });
-        } catch {
-            toast.error("Username already taken");
+        } catch (err: unknown) {
+            const status =
+                err && typeof err === "object" && "response" in err
+                    ? (err as { response: { status?: number } }).response
+                          ?.status
+                    : null;
+            const msg =
+                err && typeof err === "object" && "response" in err
+                    ? (err as { response: { data?: { message?: string } } })
+                          .response?.data?.message
+                    : null;
+            if (status === 409) {
+                toast.error("Username already taken");
+            } else {
+                toast.error(msg || "Registration failed");
+            }
         }
     };
 
