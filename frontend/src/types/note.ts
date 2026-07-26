@@ -10,6 +10,9 @@ export interface NoteResponse {
     updatedAt: string;
     sortOrder?: string;
     color?: string;
+    workspaceId?: string;
+    folderId?: string | null;
+    icon?: string;
 }
 
 export interface NoteRequest {

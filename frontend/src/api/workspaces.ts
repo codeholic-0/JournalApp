@@ -9,14 +9,14 @@ import type {
 export const getWorkspaces = async (
     sort: string = "sortOrder",
 ): Promise<WorkspaceResponse[]> => {
-    const { data } = await api.get(
+    const { data } = await api.get<WorkspaceResponse[]>(
         `/api/workspaces?sort=${sort}`,
     );
     return data;
 };
 
 export const getWorkspace = async (id: string): Promise<WorkspaceResponse> => {
-    const { data } = await api.get(`/api/workspaces/${id}`);
+    const { data } = await api.get<WorkspaceResponse>(`/api/workspaces/${id}`);
     return data;
 };
 

@@ -13,26 +13,28 @@ export function generateSortOrder(
     if (before === null && after === null) return "a0";
 
     if (before === null) {
+        const a = after;
         let i = 0;
-        for (; i < after!.length; i++) {
-            const d = digitVal(after![i]);
+        for (; i < a.length; i++) {
+            const d = digitVal(a[i]);
             if (d > 0) {
-                return after!.slice(0, i) + DIGITS[Math.floor(d / 2)];
+                return a.slice(0, i) + DIGITS[Math.floor(d / 2)];
             }
         }
-        return after! + "01";
+        return a + "01";
     }
 
     if (after === null) {
-        let i = before.length;
+        const b = before;
+        let i = b.length;
         while (i > 0) {
             i--;
-            const d = digitVal(before[i]);
+            const d = digitVal(b[i]);
             if (d < BASE - 1) {
-                return before.slice(0, i) + DIGITS[d + 1];
+                return b.slice(0, i) + DIGITS[d + 1];
             }
         }
-        return before + "a";
+        return b + "a";
     }
 
     if (before >= after) {

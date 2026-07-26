@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from "react";
-import { ChevronDown, Plus, Check} from "lucide-react";
+import { ChevronDown, Plus, Check } from "lucide-react";
 import { useWorkspaces } from "../hooks/useWorkspaces";
 import { useVaultStore } from "../store/vaultStore";
+
 interface WorkspaceSwitcherProps {
     onNewWorkspace: () => void;
 }
@@ -11,6 +12,7 @@ export default function WorkspaceSwitcher({
 }: WorkspaceSwitcherProps) {
     const [open, setOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
+    const menuRef = useRef<HTMLDivElement>(null);
     const sort = useVaultStore((s) => s.workspaceSort);
     const currentId = useVaultStore((s) => s.currentWorkspaceId);
     const setCurrentId = useVaultStore((s) => s.setCurrentWorkspaceId);
@@ -25,12 +27,23 @@ export default function WorkspaceSwitcher({
         return () => document.removeEventListener("mousedown", handleClick);
     }, []);
 
+    useEffect(() => {
+        if (!open) return;
+        const handler = (e: KeyboardEvent) => {
+            if (e.key === "Escape") setOpen(false);
+        };
+        document.addEventListener("keydown", handler);
+        return () => document.removeEventListener("keydown", handler);
+    }, [open]);
+
     const current = workspaces?.find((w) => w.id === currentId);
 
     return (
         <div ref={ref} className="relative">
             <button
                 onClick={() => setOpen(!open)}
+                aria-haspopup="listbox"
+                aria-expanded={open}
                 className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm font-semibold text-on-surface hover:bg-hover transition-colors"
             >
                 <span className="truncate flex-1 text-left">
@@ -39,14 +52,22 @@ export default function WorkspaceSwitcher({
                 <ChevronDown
                     size={16}
                     className="text-on-surface-muted shrink-0"
+                    aria-hidden="true"
                 />
             </button>
 
             {open && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-surface-raised border border-outline rounded-xl shadow-xl z-50 py-1 max-h-64 overflow-y-auto">
+                <div
+                    ref={menuRef}
+                    role="listbox"
+                    aria-label="Select workspace"
+                    className="absolute top-full left-0 right-0 mt-1 bg-surface-raised border border-outline rounded-xl shadow-xl z-50 py-1 max-h-64 overflow-y-auto"
+                >
                     {workspaces?.map((w) => (
                         <button
                             key={w.id}
+                            role="option"
+                            aria-selected={w.id === currentId}
                             onClick={() => {
                                 setCurrentId(w.id);
                                 setOpen(false);
@@ -59,7 +80,7 @@ export default function WorkspaceSwitcher({
                         >
                             <span className="truncate flex-1">{w.name}</span>
                             {w.id === currentId && (
-                                <Check size={16} className="shrink-0" />
+                                <Check size={16} className="shrink-0" aria-hidden="true" />
                             )}
                         </button>
                     ))}
@@ -72,7 +93,7 @@ export default function WorkspaceSwitcher({
                             }}
                             className="flex items-center gap-3 w-full px-3 py-2 text-sm text-on-surface-muted hover:bg-hover transition-colors"
                         >
-                            <Plus size={16} />
+                            <Plus size={16} aria-hidden="true" />
                             <span>New workspace</span>
                         </button>
                     </div>

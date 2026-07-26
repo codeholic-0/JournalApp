@@ -6,7 +6,7 @@ export const getUser = async (username: string): Promise<UserResponse> => {
     return data;
 };
 
-export const updatePassword = async (
+export const updateUser = async (
     username: string,
     body: UserRequest,
 ): Promise<UserResponse> => {

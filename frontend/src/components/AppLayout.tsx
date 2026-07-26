@@ -57,12 +57,13 @@ function SectionDivider({
                 aria-expanded={!isCollapsed}
                 className="flex items-center gap-2 w-full px-3 py-1.5 text-xs font-semibold text-on-surface-muted hover:text-on-surface transition-colors"
             >
-                <ChevronDown
-                    size={14}
-                    className={`transition-transform duration-200 ${
-                        isCollapsed ? "-rotate-90" : ""
-                    }`}
-                />
+                            <ChevronDown
+                                size={14}
+                                className={`transition-transform duration-200 ${
+                                    isCollapsed ? "-rotate-90" : ""
+                                }`}
+                                aria-hidden="true"
+                            />
                 {label}
             </button>
             <div
@@ -154,7 +155,7 @@ export default function AppLayout() {
                         className="w-full p-1.5 rounded-md text-on-surface-muted hover:bg-hover hover:text-on-surface transition-colors"
                         title="Expand sidebar"
                     >
-                        <PanelLeftOpen size={18} className="mx-auto" />
+                        <PanelLeftOpen size={18} className="mx-auto" aria-hidden="true" />
                     </button>
                 )}
             </div>
@@ -182,7 +183,7 @@ export default function AppLayout() {
                         className={linkClass}
                         title={collapsed ? item.label : undefined}
                     >
-                        <item.icon size={18} />
+                        <item.icon size={18} aria-hidden="true" />
                         {!collapsed && <span>{item.label}</span>}
                     </NavLink>
                 ))}
@@ -206,7 +207,7 @@ export default function AppLayout() {
                     onClick={() => setSidebarOpen(false)}
                     className={linkClass}
                 >
-                    <UserCircle size={18} />
+                    <UserCircle size={18} aria-hidden="true" />
                     {!collapsed && <span>{user?.username ?? "Account"}</span>}
                 </NavLink>
                 <button

@@ -6,7 +6,7 @@ import { z } from "zod";
 import { Lock, Loader2, LogOut, Trash2, AlertTriangle, X } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../hooks/useAuth";
-import { useUpdatePassword, useDeleteUser } from "../hooks/useUser";
+import { useUpdateUser, useDeleteUser } from "../hooks/useUser";
 import { useAppearance } from "../hooks/useAppearance";
 import axios from "axios";
 
@@ -40,7 +40,7 @@ const ACCENTS = [
 export default function Account() {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
-    const updatePassword = useUpdatePassword();
+    const updateUser = useUpdateUser();
     const deleteUser = useDeleteUser();
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const username = user?.username ?? "";
@@ -62,7 +62,7 @@ export default function Account() {
 
     const onSubmit = async (data: PasswordForm) => {
         try {
-            await updatePassword.mutateAsync({
+            await updateUser.mutateAsync({
                 username,
                 data: { username, password: data.password },
             });

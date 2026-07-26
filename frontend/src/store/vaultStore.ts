@@ -77,8 +77,11 @@ export const useVaultStore = create<VaultState>()(
             toggleFolderExpanded: (id) =>
                 set((state) => {
                     const next = new Set(state.expandedFolders);
-                    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-                    next.has(id) ? next.delete(id) : next.add(id);
+                    if (next.has(id)) {
+                        next.delete(id);
+                    } else {
+                        next.add(id);
+                    }
                     return { expandedFolders: next };
                 }),
             setSelectedTagIds: (ids) => set({ selectedTagIds: ids }),

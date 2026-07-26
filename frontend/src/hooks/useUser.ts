@@ -9,7 +9,7 @@ export const useUser = (username: string) =>
         enabled: !!username,
     });
 
-export const useUpdatePassword = () => {
+export const useUpdateUser = () => {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: ({
@@ -18,7 +18,7 @@ export const useUpdatePassword = () => {
         }: {
             username: string;
             data: UserRequest;
-        }) => usersApi.updatePassword(username, data),
+        }) => usersApi.updateUser(username, data),
         onSuccess: (_data, { username }) => {
             qc.invalidateQueries({ queryKey: ["user", username] });
         },

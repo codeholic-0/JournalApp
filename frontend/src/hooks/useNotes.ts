@@ -126,11 +126,14 @@ export const usePurgeNote = () => {
     });
 };
 
-export const useToggleFavorite = () => {
+function useToggleNoteField(
+    field: "favorite" | "pinned",
+    toggleFn: (username: string, id: string) => Promise<NoteResponse>,
+) {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: ({ username, id }: { username: string; id: string }) =>
-            notesApi.toggleFavorite(username, id),
+            toggleFn(username, id),
         onMutate: async ({ username, id }) => {
             await qc.cancelQueries({ queryKey: ["notes", username] });
             await qc.cancelQueries({ queryKey: ["note", username, id] });
@@ -151,7 +154,9 @@ export const useToggleFavorite = () => {
                     return {
                         ...old,
                         content: old.content.map((n) =>
-                            n.id === id ? { ...n, favorite: !n.favorite } : n,
+                            n.id === id
+                                ? { ...n, [field]: !(n as Record<string, boolean>)[field] }
+                                : n,
                         ),
                     };
                 },
@@ -159,7 +164,7 @@ export const useToggleFavorite = () => {
 
             qc.setQueryData<NoteResponse>(["note", username, id], (old) => {
                 if (!old) return old;
-                return { ...old, favorite: !old.favorite };
+                return { ...old, [field]: !(old as Record<string, boolean>)[field] };
             });
 
             return { snapshot, previousNote };
@@ -177,60 +182,13 @@ export const useToggleFavorite = () => {
             qc.invalidateQueries({ queryKey: ["note", username, id] });
         },
     });
-};
+}
 
-export const useTogglePin = () => {
-    const qc = useQueryClient();
-    return useMutation({
-        mutationFn: ({ username, id }: { username: string; id: string }) =>
-            notesApi.togglePin(username, id),
-        onMutate: async ({ username, id }) => {
-            await qc.cancelQueries({ queryKey: ["notes", username] });
-            await qc.cancelQueries({ queryKey: ["note", username, id] });
+export const useToggleFavorite = () =>
+    useToggleNoteField("favorite", notesApi.toggleFavorite);
 
-            const snapshot = qc.getQueriesData({
-                queryKey: ["notes", username],
-            });
-            const previousNote = qc.getQueryData<NoteResponse>([
-                "note",
-                username,
-                id,
-            ]);
-
-            qc.setQueriesData<PagedResponse<NoteResponse>>(
-                { queryKey: ["notes", username] },
-                (old) => {
-                    if (!old) return old;
-                    return {
-                        ...old,
-                        content: old.content.map((n) =>
-                            n.id === id ? { ...n, pinned: !n.pinned } : n,
-                        ),
-                    };
-                },
-            );
-
-            qc.setQueryData<NoteResponse>(["note", username, id], (old) => {
-                if (!old) return old;
-                return { ...old, pinned: !old.pinned };
-            });
-
-            return { snapshot, previousNote };
-        },
-        onError: (_err, { username, id }, ctx) => {
-            if (ctx?.previousNote)
-                qc.setQueryData(["note", username, id], ctx.previousNote);
-            if (ctx?.snapshot) {
-                for (const [key, data] of ctx.snapshot)
-                    qc.setQueryData(key, data);
-            }
-        },
-        onSettled: (_data, _err, { username, id }) => {
-            qc.invalidateQueries({ queryKey: ["notes", username] });
-            qc.invalidateQueries({ queryKey: ["note", username, id] });
-        },
-    });
-};
+export const useTogglePin = () =>
+    useToggleNoteField("pinned", notesApi.togglePin);
 
 export const useUpdateSortOrder = () => {
     const qc = useQueryClient();

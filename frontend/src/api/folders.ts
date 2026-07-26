@@ -9,7 +9,7 @@ export const getFolders = async (
     workspaceId: string,
     sort: string = "sortOrder",
 ): Promise<FolderResponse[]> => {
-    const { data } = await api.get(
+    const { data } = await api.get<FolderResponse[]>(
         `/api/workspaces/${workspaceId}/folders?sort=${sort}`,
     );
     return data;
@@ -19,7 +19,7 @@ export const getFolder = async (
     workspaceId: string,
     folderId: string,
 ): Promise<FolderResponse> => {
-    const { data } = await api.get(
+    const { data } = await api.get<FolderResponse>(
         `/api/workspaces/${workspaceId}/folders/${folderId}`,
     );
     return data;

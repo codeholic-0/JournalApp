@@ -55,13 +55,14 @@ export default function IconColorPicker({
                         <button
                             key={value}
                             onClick={() => onIconChange(value)}
+                            aria-label={value}
                             className={`w-8 h-8 rounded-md flex items-center justify-center transition-colors ${
                                 icon === value
                                     ? "bg-primary text-white"
                                     : "bg-surface-alt text-on-surface-muted hover:bg-hover border border-outline"
                             }`}
                         >
-                            <Component size={14} />
+                            <Component size={14} aria-hidden="true" />
                         </button>
                     ))}
                 </div>
@@ -71,10 +72,11 @@ export default function IconColorPicker({
                     Color
                 </label>
                 <div className="flex gap-2 flex-wrap">
-                    {PRESET_COLORS.map((c) => (
+                    {PRESET_COLORS.map((c, idx) => (
                         <button
                             key={c}
                             onClick={() => onColorChange(c)}
+                            aria-label={`Color ${idx + 1}`}
                             className={`w-7 h-7 rounded-full transition-transform ${
                                 color === c
                                     ? "ring-2 ring-offset-2 ring-offset-surface-raised ring-primary scale-110"
