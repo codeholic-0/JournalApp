@@ -22,6 +22,7 @@ function applyAccent(accent: string | null) {
 }
 
 function applyDensity(density: string) {
+    if(!density) return;
     document.documentElement.style.setProperty("--row-density", density);
     const isCompact = density === "compact";
     document.documentElement.style.setProperty("--card-p", isCompact ? "0.5rem" : "1rem");

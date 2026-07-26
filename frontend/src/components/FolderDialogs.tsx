@@ -31,9 +31,14 @@ function getDescendantIds(
     parentId: string,
 ): Set<string> {
     const ids = new Set<string>([parentId]);
-    for (const f of folders) {
-        if (f.parentId && ids.has(f.parentId)) {
-            ids.add(f.id);
+    let added = true;
+    while (added) {
+        added = false;
+        for (const f of folders) {
+            if (f.parentId && ids.has(f.parentId) && !ids.has(f.id)) {
+                ids.add(f.id);
+                added = true;
+            }
         }
     }
     return ids;
@@ -432,9 +437,15 @@ function Modal({
         const handler = (e: KeyboardEvent) => {
             if (e.key !== "Tab") return;
             if (e.shiftKey) {
-                if (document.activeElement === first) { e.preventDefault(); last?.focus(); }
+                if (document.activeElement === first) {
+                    e.preventDefault();
+                    last?.focus();
+                }
             } else {
-                if (document.activeElement === last) { e.preventDefault(); first?.focus(); }
+                if (document.activeElement === last) {
+                    e.preventDefault();
+                    first?.focus();
+                }
             }
         };
         el.addEventListener("keydown", handler);

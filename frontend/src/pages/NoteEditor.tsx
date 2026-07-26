@@ -203,6 +203,7 @@ export default function NoteEditor() {
                 } else {
                     await del("note-draft:__new__");
                 }
+                dirtyRef.current = false;
                 navigate("/");
             } catch {
                 toast.error("Failed to save note");
@@ -251,12 +252,15 @@ export default function NoteEditor() {
                     <span className="hidden sm:inline">Exit focus</span>
                 </button>
             )}
+            {/* eslint-disable-next-line react-hooks/refs -- handleSubmit calls onSubmit only on form submission, not during render */}
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <div
                     className={`flex items-center gap-3 ${focusMode ? "hidden" : ""}`}
                 >
                     <FileText size={20} className="text-primary shrink-0" />
-                    <label htmlFor="note-title" className="sr-only">Title</label>
+                    <label htmlFor="note-title" className="sr-only">
+                        Title
+                    </label>
                     <input
                         id="note-title"
                         {...register("title")}
