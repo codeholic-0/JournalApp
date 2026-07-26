@@ -82,13 +82,13 @@ api.interceptors.response.use(
             notifySubscribers(data.accessToken);
             original.headers.Authorization = `Bearer ${data.accessToken}`;
             return api(original);
-        } catch {
+        } catch (refreshError) {
             setRefreshToken(null);
             setAccessToken(null);
             onRefreshed?.(null);
-            refreshSubscribers.forEach(({ reject }) => reject(error));
+            refreshSubscribers.forEach(({ reject }) => reject(refreshError));
             refreshSubscribers = [];
-            return Promise.reject(error);
+            return Promise.reject(refreshError);
         } finally {
             isRefreshing = false;
         }

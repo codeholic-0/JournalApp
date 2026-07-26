@@ -56,6 +56,7 @@ export const useCreateNote = () => {
         }) => notesApi.createNote(username, data),
         onSuccess: (_data, { username }) => {
             qc.invalidateQueries({ queryKey: ["notes", username] });
+            qc.invalidateQueries({ queryKey: ["unfiledCount", username] });
         },
     });
 };
@@ -75,6 +76,7 @@ export const useUpdateNote = () => {
         onSuccess: (_data, { username, id }) => {
             qc.invalidateQueries({ queryKey: ["notes", username] });
             qc.invalidateQueries({ queryKey: ["note", username, id] });
+            qc.invalidateQueries({ queryKey: ["unfiledCount", username] });
         },
     });
 };
@@ -86,6 +88,7 @@ export const useDeleteNote = () => {
             notesApi.deleteNote(username, id),
         onSuccess: (_data, { username }) => {
             qc.invalidateQueries({ queryKey: ["notes", username] });
+            qc.invalidateQueries({ queryKey: ["unfiledCount", username] });
         },
     });
 };
@@ -106,6 +109,7 @@ export const useRestoreNote = () => {
         onSuccess: (_data, { username }) => {
             qc.invalidateQueries({ queryKey: ["trash", username] });
             qc.invalidateQueries({ queryKey: ["notes", username] });
+            qc.invalidateQueries({ queryKey: ["unfiledCount", username] });
         },
     });
 };
@@ -117,6 +121,7 @@ export const usePurgeNote = () => {
             notesApi.purgeNote(username, id),
         onSuccess: (_data, { username }) => {
             qc.invalidateQueries({ queryKey: ["trash", username] });
+            qc.invalidateQueries({ queryKey: ["unfiledCount", username] });
         },
     });
 };

@@ -87,6 +87,7 @@ export default function AppLayout() {
     const setSidebarWidth = useVaultStore((s) => s.setSidebarWidth);
     const collapsed = sidebarWidth <= 80;
     const focusMode = useVaultStore((s) => s.focusMode);
+    const currentWorkspaceId = useVaultStore((s) => s.currentWorkspaceId);
     const { showShortcuts, setShowShortcuts } = useShortcuts();
     const dragRef = useRef<HTMLDivElement>(null);
 
@@ -165,7 +166,7 @@ export default function AppLayout() {
                 <WorkspaceSwitcher
                     onNewWorkspace={() => setShowCreateModal(true)}
                 />
-                <SortSelector />
+                {currentWorkspaceId && <SortSelector />}
             </SectionDivider>
 
             {/* Primary nav */}
@@ -184,13 +185,15 @@ export default function AppLayout() {
                     </NavLink>
                 ))}
 
-                <SectionDivider
-                    label="Folders"
-                    section="folders"
-                    collapsed={collapsed}
-                >
-                    <FolderTree />
-                </SectionDivider>
+                {currentWorkspaceId && (
+                    <SectionDivider
+                        label="Folders"
+                        section="folders"
+                        collapsed={collapsed}
+                    >
+                        <FolderTree />
+                    </SectionDivider>
+                )}
             </nav>
 
             {/* Account link */}
@@ -220,7 +223,7 @@ export default function AppLayout() {
 
     return (
         <div className="min-h-screen bg-surface">
-            <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[60] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-surface-raised focus:text-on-surface focus:border focus:border-outline focus:shadow-lg">
+            <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-60 focus:px-4 focus:py-2 focus:rounded-lg focus:bg-surface-raised focus:text-on-surface focus:border focus:border-outline focus:shadow-lg">
                 Skip to content
             </a>
             {/* Mobile hamburger */}
