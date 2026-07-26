@@ -90,7 +90,7 @@ export default function NoteEditor() {
         },
     });
 
-    const debouncedSave = useDebouncedCallback(() => {
+    const { call: debouncedSave } = useDebouncedCallback(() => {
         const content = getValue();
         const title = getValues("title");
         if (content === lastSavedRef.current) return;

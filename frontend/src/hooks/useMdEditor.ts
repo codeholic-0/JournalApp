@@ -21,7 +21,7 @@ export function useMdEditor(opts?: MountMDOpts) {
         optsRef.current = opts;
     });
 
-    const updateStats = useDebouncedCallback((value: string) => {
+    const { call: updateStats } = useDebouncedCallback((value: string) => {
         setStats({
             words: value ? value.trim().split(/\s+/).filter(Boolean).length : 0,
             chars: value.length,
@@ -66,5 +66,16 @@ export function useMdEditor(opts?: MountMDOpts) {
         apiRef.current?.scrollTo(pos);
     }, []);
 
-    return { editorRef, getValue, setValue, ready, setWrap, stats, triggerCompletion, headings, scrollTo, openSearch };
+    return {
+        editorRef,
+        getValue,
+        setValue,
+        ready,
+        setWrap,
+        stats,
+        triggerCompletion,
+        headings,
+        scrollTo,
+        openSearch,
+    };
 }
