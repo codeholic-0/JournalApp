@@ -155,7 +155,7 @@ function useToggleNoteField(
                         ...old,
                         content: old.content.map((n) =>
                             n.id === id
-                                ? { ...n, [field]: !(n as Record<string, boolean>)[field] }
+                                ? { ...n, [field]: !(n as unknown as Record<string, boolean | undefined>)[field] }
                                 : n,
                         ),
                     };
@@ -164,7 +164,7 @@ function useToggleNoteField(
 
             qc.setQueryData<NoteResponse>(["note", username, id], (old) => {
                 if (!old) return old;
-                return { ...old, [field]: !(old as Record<string, boolean>)[field] };
+                return { ...old, [field]: !(old as unknown as Record<string, boolean | undefined>)[field] };
             });
 
             return { snapshot, previousNote };

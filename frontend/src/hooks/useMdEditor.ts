@@ -66,9 +66,6 @@ export function useMdEditor(opts?: MountMDOpts) {
         apiRef.current?.scrollTo(pos);
     }, []);
 
-<<<<<<< HEAD
-    return { editorRef, getValue, setValue, ready, setWrap, stats, triggerCompletion, headings, scrollTo, openSearch };
-=======
     return {
         editorRef,
         getValue,
@@ -81,5 +78,4 @@ export function useMdEditor(opts?: MountMDOpts) {
         scrollTo,
         openSearch,
     };
->>>>>>> dev
 }

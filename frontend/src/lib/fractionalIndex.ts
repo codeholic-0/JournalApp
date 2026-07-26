@@ -13,7 +13,7 @@ export function generateSortOrder(
     if (before === null && after === null) return "a0";
 
     if (before === null) {
-        const a = after;
+        const a = after as string;
         let i = 0;
         for (; i < a.length; i++) {
             const d = digitVal(a[i]);
